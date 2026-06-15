@@ -170,7 +170,7 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
                 print_message(f"If you want to install module without checking sha256 sum, you need to install module with --skip-check flag.", WARNING, force=True)
                 return
         if helper_changelog:
-            with open(changelog_path, 'w' if changelog_path.exists() else 'x', encoding='utf-8') as changelog_file:
+            with open(changelog_path, 'w' if changelog_path.exists() else 'x', newline="\n", encoding='utf-8') as changelog_file:
                 changelog_file.write(helper_changelog)
         req_file = Path(f"{install_dest}/requirements.txt").absolute()
         install_sc = Path(f"{install_dest}/INSTALL.sc")
