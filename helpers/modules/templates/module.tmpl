@@ -1,0 +1,33 @@
+from helpers import print_message, print_choices, print_choice, SUCCESS, INFO, WARNING, ERROR
+
+
+# Module global settings
+__module_disabled_methods__ = []
+__module_name__ = '{name}'
+__module_author__ = '{author}'
+__module_version__ = '{version}'
+__module_link__ = None
+__module_category__ = []
+__module_compatibility__ = [{systems}]
+__module_dependencies__ = [{{}}]
+__module_status__ = 'dev'
+__methods_static_aliases__ = {{}}
+
+
+class {module}Helper:
+    """
+    Module description here.
+    """
+    def __init__(self, settings: dict):
+        self.settings = settings
+
+    def hello(self):
+        return 'Hello World!'
+
+    def echo(self, arg):
+        """
+        Method returns your argument.
+        Usage:
+            {module} echo <some_argument>
+        """
+        return arg
