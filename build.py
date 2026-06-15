@@ -42,31 +42,36 @@ def windows_installer(structure: list, requirements: list):
     ]
     installer_path = Path('./setup.ps1')
 
-    def append_item(item: Path):
+    def append_item(item: Path, requirements: bool = False):
         if item.is_dir():
             commands.append(f'\tNew-Item -ItemType Directory -Path "$location/{item.as_posix()}" -Force | Out-Null  2>> install.log\n')
             commands.append(exit_code_check())
             for child in sorted(item.iterdir()):
                 append_item(child)
         else:
-            with open(item, "rb") as f:
-                b64 = base64.b64encode(f.read()).decode("ascii")
+            if requirements:
+                new_req_content = []
+                with open(item, 'r', encoding='utf-8') as req_file:
+                    for req_line in req_file.readlines():
+                        for ignore_package in pip_ignore_win:
+                            if ignore_package not in req_line:
+                                new_req_content.append(req_line)
+                    b64 = base64.b64encode('\n'.join(new_req_content).encode("utf-8")).decode("utf-8")
+            else:
+                with open(item, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("utf-8")
             commands.append(f"\t[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"{b64}\")) | Out-File -FilePath $location/{item.as_posix()} 2>> install.log\n\n")
             commands.append(exit_code_check())
 
     for entry in structure:
-        append_item(Path(entry))
+        append_item(Path(entry), Path(entry) in requirements)
 
     commands.extend([
         '\tWrite-Host "Structure prepared."\n', 
         '\tWrite-Host "Installing dependencies..."\n'
     ])
     for requirement in requirements:
-        commands.append(f"\tpip install -r $location/{requirement.as_posix()}")
-        if pip_ignore_win:
-            commands.append(f" --exclude {' '.join(pip_ignore_win)} 2>> install.log\n")
-        else:
-            commands.append(' 2>> install.log\n')
+        commands.append(f"\tpip install -r $location/{requirement.as_posix()}\n")
         commands.append(exit_code_check())
     commands.extend([
         "\tif ($exit_code -ne 0) {\n",
@@ -105,15 +110,24 @@ def unix_installer(structure: list, requirements: list):
     ]
     installer_path = Path('./setup.sh')
 
-    def append_item(item: Path):
+    def append_item(item: Path, requirements: bool = False):
         if item.is_dir():
             commands.append(f"\tmkdir -p $location/{item.as_posix()} 2>> install.log\n")
             commands.append(exit_code_check('Unix'))
             for child in sorted(item.iterdir()):
                 append_item(child)
         else:
-            with open(item, "rb") as f:
-                b64 = base64.b64encode(f.read()).decode("ascii")
+            if requirements:
+                new_req_content = []
+                with open(item, 'r', encoding='utf-8') as req_file:
+                    for req_line in req_file.readlines():
+                        for ignore_package in pip_ignore_unix:
+                            if ignore_package not in req_line:
+                                new_req_content.append(req_line)
+                    b64 = base64.b64encode('\n'.join(new_req_content).encode("utf-8")).decode("utf-8")
+            else:
+                with open(item, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("utf-8")
             commands.append(f"""\tbase64 --decode << 'EOF' > $location/{item.as_posix()}
 {b64}
 EOF
@@ -122,7 +136,7 @@ EOF
             commands.append(exit_code_check('Unix'))
 
     for entry in structure:
-        append_item(Path(entry))
+        append_item(Path(entry), Path(entry) in requirements)
 
     commands.extend(['\techo "Structure prepared."\n', '\techo "Installing dependencies..."\n'])
     for requirement in requirements:
@@ -169,6 +183,11 @@ if __name__ == '__main__':
     pipreqs_obj.logging.disable()
     print_message(f"Starting pipreqs with arguments {pipreqs_args}...", debug=True)
     pipreqs_obj.init(pipreqs_args)
+    reqs_lines = []
+    with open(Path('./requirements.txt'), 'r', encoding='utf-8') as reqs_file:
+        reqs_lines = reqs_file.readlines()
+    with open(Path('./requirements.txt'), 'w', newline="\n", encoding='utf-8') as reqs_file:
+        reqs_file.writelines(reqs_lines)
     
     print_message('Listing core files...', debug=True)
     core_files = detect_core()
