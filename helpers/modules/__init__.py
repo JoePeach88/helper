@@ -449,11 +449,11 @@ class modulesHelper:
                     if selected_for_install:
                         if 'all' in selected_for_install:
                             for module_data in modules_for_update:
-                                return install_module(module_data['name'], module_data['remote_download_link'])
+                                return install_module(module_data['name'], module_data['remote_download_link'], skip_check=skip_check, force=True)
                         elif selected_for_install:
                             for module_data in modules_for_update:
                                 if module_data['name'] in selected_for_install:
-                                    return install_module(module_data['name'], module_data['remote_download_link'])
+                                    return install_module(module_data['name'], module_data['remote_download_link'], skip_check=skip_check, force=True)
                         else:
                             return
             else:
