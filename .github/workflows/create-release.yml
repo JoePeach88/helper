@@ -42,7 +42,7 @@ jobs:
           prerelease: false
 
       - name: "[Step 6] Upload Win Installer"
-        id: upload-release-asset 
+        id: upload-win-installer
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,7 +52,7 @@ jobs:
           asset_name: setup.ps1
 
       - name: "[Step 7] Upload Unix Installer"
-        id: upload-release-asset 
+        id: upload-unix-installer
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
