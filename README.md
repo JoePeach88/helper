@@ -86,4 +86,4 @@ helper modules update install
 
 ## Docs
 
-* [Module Development Guide](./helpers/README.md)
+* [Module Development Guide](./HELPERS.md)
