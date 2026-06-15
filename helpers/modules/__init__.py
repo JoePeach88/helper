@@ -152,11 +152,11 @@ class modulesHelper:
         """
         module_template = ""
         install_scenario_template = ""
-        with open(self.templates.get('module'), 'r', newline="\n", encoding='utf-8') as module_template_file:
+        with open(self.templates.get('module'), 'r', encoding='utf-8') as module_template_file:
             module_template = module_template_file.read()
-        with open(self.templates.get('scenario'), 'r', newline="\n", encoding='utf-8') as install_scenario_template_file:
+        with open(self.templates.get('scenario'), 'r', encoding='utf-8') as install_scenario_template_file:
             install_scenario_template = install_scenario_template_file.read()
-        with open(self.templates.get('scenario'), 'r', newline="\n", encoding='utf-8') as uninstall_scenario_template_file:
+        with open(self.templates.get('scenario'), 'r', encoding='utf-8') as uninstall_scenario_template_file:
             uninstall_scenario_template = uninstall_scenario_template_file.read()
         if module_template:
             module_template = module_template.format(module = module, name = name, author = author, version = version, systems = ", ".join(f"'{system}'" for system in systems.split(",")))
@@ -255,7 +255,7 @@ class modulesHelper:
                                 methods_description.append(f"```\n{method_doc}\n```\n")
                     methods_description = '\n'.join(methods_description)
                     module_readme = Path(helper.__file__).parent / 'README.md'
-                    with open(self.templates.get('documentation'), 'r', newline="\n", encoding='utf-8') as documentation_template_file:
+                    with open(self.templates.get('documentation'), 'r', encoding='utf-8') as documentation_template_file:
                         documentation_template = documentation_template_file.read()
                     if documentation_template:
                         documentation = documentation_template.format(module = module, description = description, methods_list = methods_list, link = link, author = author, 
@@ -287,7 +287,7 @@ class modulesHelper:
                     pipreqs_obj.init(pipreqs_args)
                     reqs = helper_path / 'requirements.txt'
                     reqs_lines = []
-                    with open(reqs, 'r', newline="\n", encoding='utf-8') as reqs_file:
+                    with open(reqs, 'r', encoding='utf-8') as reqs_file:
                         reqs_lines = reqs_file.readlines()
                         reqs_lines = [line for line in reqs_lines if not re.match(r'^(helpers|env|libs|handler|messages|utils).*$', line)] # remove basic helper imports
                     with open(reqs, 'w', newline="\n", encoding='utf-8') as reqs_file:
