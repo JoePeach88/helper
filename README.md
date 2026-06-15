@@ -81,8 +81,8 @@ helper modules update install
 
 ## Builtin modules
 
-* [core](./helpers/core/README.md) - Module to work with helper core settings.
-* [modules](./helpers/modules/README.md) - Module to work with helper installed modules.
+* [core](https://github.com/JoePeach88/helper/blob/1.x.x/helpers/core/README.md) - Module to work with helper core settings.
+* [modules](https://github.com/JoePeach88/helper/blob/1.x.x/helpers/modules/README.md) - Module to work with helper installed modules.
 
 ## Docs
 
