@@ -74,7 +74,9 @@ Module updates helper core.
 ### check
 
 ```
-None
+Method checks updates for helper core.
+Usage:
+core update check
 ```
 
 ### install
