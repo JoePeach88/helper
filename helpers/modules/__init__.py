@@ -152,11 +152,11 @@ class modulesHelper:
         """
         module_template = ""
         install_scenario_template = ""
-        with open(self.templates.get('module'), 'r', encoding='utf-8') as module_template_file:
+        with open(self.templates.get('module'), 'r', newline="\n", encoding='utf-8') as module_template_file:
             module_template = module_template_file.read()
-        with open(self.templates.get('scenario'), 'r', encoding='utf-8') as install_scenario_template_file:
+        with open(self.templates.get('scenario'), 'r', newline="\n", encoding='utf-8') as install_scenario_template_file:
             install_scenario_template = install_scenario_template_file.read()
-        with open(self.templates.get('scenario'), 'r', encoding='utf-8') as uninstall_scenario_template_file:
+        with open(self.templates.get('scenario'), 'r', newline="\n", encoding='utf-8') as uninstall_scenario_template_file:
             uninstall_scenario_template = uninstall_scenario_template_file.read()
         if module_template:
             module_template = module_template.format(module = module, name = name, author = author, version = version, systems = ", ".join(f"'{system}'" for system in systems.split(",")))
@@ -171,13 +171,13 @@ class modulesHelper:
             os.remove(uninstall_scenario_path)
 
         if not install_scenario_path.exists():
-            with open(install_scenario_path, 'x', encoding='utf-8') as install_scenario_file:
+            with open(install_scenario_path, 'x', newline="\n", encoding='utf-8') as install_scenario_file:
                 install_scenario_file.write(install_scenario_template)
         if not uninstall_scenario_path.exists():
-            with open(uninstall_scenario_path, 'x', encoding='utf-8') as uninstall_scenario_file:
+            with open(uninstall_scenario_path, 'x', newline="\n", encoding='utf-8') as uninstall_scenario_file:
                 uninstall_scenario_file.write(uninstall_scenario_template)
         if not init_path.exists():
-            with open(init_path, 'x', encoding='utf-8') as module_file:
+            with open(init_path, 'x', newline="\n", encoding='utf-8') as module_file:
                 module_file.write(module_template)
             return f"Module '{module}' created."
         else:
@@ -255,7 +255,7 @@ class modulesHelper:
                                 methods_description.append(f"```\n{method_doc}\n```\n")
                     methods_description = '\n'.join(methods_description)
                     module_readme = Path(helper.__file__).parent / 'README.md'
-                    with open(self.templates.get('documentation'), 'r', encoding='utf-8') as documentation_template_file:
+                    with open(self.templates.get('documentation'), 'r', newline="\n", encoding='utf-8') as documentation_template_file:
                         documentation_template = documentation_template_file.read()
                     if documentation_template:
                         documentation = documentation_template.format(module = module, description = description, methods_list = methods_list, link = link, author = author, 
@@ -263,7 +263,7 @@ class modulesHelper:
                     else:
                         print_message('Documentation template not exists, aborting md creation.', ERROR)
                         return 'Documentation template not exists, aborting md creation.'
-                    with open(module_readme, 'w' if module_readme.exists() else 'x', encoding='utf-8') as module_readme_file:
+                    with open(module_readme, 'w' if module_readme.exists() else 'x', newline="\n", encoding='utf-8') as module_readme_file:
                         module_readme_file.write(documentation)
                     print_message(f"README.md successfully rendered to '{module_readme.absolute()}'.", force=True)
 
@@ -287,10 +287,10 @@ class modulesHelper:
                     pipreqs_obj.init(pipreqs_args)
                     reqs = helper_path / 'requirements.txt'
                     reqs_lines = []
-                    with open(reqs, 'r', encoding='utf-8') as reqs_file:
+                    with open(reqs, 'r', newline="\n", encoding='utf-8') as reqs_file:
                         reqs_lines = reqs_file.readlines()
                         reqs_lines = [line for line in reqs_lines if not re.match(r'^(helpers|env|libs|handler|messages|utils).*$', line)] # remove basic helper imports
-                    with open(reqs, 'w', encoding='utf-8') as reqs_file:
+                    with open(reqs, 'w', newline="\n", encoding='utf-8') as reqs_file:
                         reqs_file.writelines(reqs_lines)
                     if not reqs_lines:
                         os.remove(reqs)
@@ -324,7 +324,7 @@ class modulesHelper:
                         hash_obj = {f"{file_parent}/{file_name}": get_file_sha256(file)}
                         hash_list.append(hash_obj)
                     hash_list_file = helper_path / 'SHA256'
-                    with open(hash_list_file, 'w' if hash_list_file.exists() else 'x', encoding='utf-8') as f:
+                    with open(hash_list_file, 'w' if hash_list_file.exists() else 'x', newline="\n", encoding='utf-8') as f:
                         f.write(yaml.dump(hash_list))
                     print_message(f"SHA256 hash table successfully rendered to '{hash_list_file.absolute()}'.", force=True)
 

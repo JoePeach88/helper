@@ -45,9 +45,9 @@ def _run_scenario(phase, scenario, module_name, scenario_type):
 
     print_message(f"Executing {phase}-{scenario_type}ation scenarios for module '{module_name}'...")
 
-    if not _run_commands(scenario.get("scripts", []), phase, "script"):
+    if not _run_commands(scenario.get("scripts", []), phase, "script", scenario_type):
         return False
-    if not _run_commands(scenario.get("inline", []), phase, "inline"):
+    if not _run_commands(scenario.get("inline", []), phase, "inline", scenario_type):
         return False
 
     return True
