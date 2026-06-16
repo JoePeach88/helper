@@ -29,17 +29,31 @@ jobs:
       - name: "[Step 4] Execute Python Script"
         run: python build.py
   
-      - name: "[Step 5] Create Release"
+      - name: "[Step 5] Create stable Release"
         id: create_release
         uses: actions/create-release@v1
+        if: contains(github.event.head_commit.message, 'STABLE:')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: helper v.${{ github.ref }}
+          release_name: helper v.${{ github.ref }} (stable)
           body_path: ./CHANGELOG.md
           draft: false
           prerelease: false
+
+      - name: "[Step 5] Create develop Release"
+        id: create_release
+        uses: actions/create-release@v1
+        if: contains(github.event.head_commit.message, 'DEV:')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: helper v.${{ github.ref }} (develop)
+          body_path: ./CHANGELOG.md
+          draft: false
+          prerelease: true
 
       - name: "[Step 6] Upload Win Installer"
         id: upload-win-installer
