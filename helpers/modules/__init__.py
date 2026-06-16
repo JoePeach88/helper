@@ -2,12 +2,13 @@ import pandas as pd
 import os
 import re
 import yaml
+from git import Repo
 from rich.console import Console
 from rich.markdown import Markdown
 from pipreqs import pipreqs
-from helpers.modules.utils import github_url_to_releases_api, retrieve_json, install_module, uninstall_module, determine_type, pack_module, get_file_sha256, get_dir_size, format_bytes
+from helpers.modules.utils import github_url_to_releases_api, github_repo_to_ssh, retrieve_json, install_module, uninstall_module, determine_type, pack_module, get_file_sha256, get_dir_size, format_bytes
 from helpers import print_message, print_choices, _load_modules_from_directory, HELPERS_DIR, INFO, WARNING, ERROR, SYSTEM_PLATFORM
-from env import loader, PIP_PROXY
+from env import loader, PIP_PROXY, __version__
 from pathlib import Path
 
 
@@ -15,7 +16,7 @@ from pathlib import Path
 __module_disabled_methods__ = []
 __module_name__ = 'ModulesHelper'
 __module_author__ = 'JoePeach88'
-__module_version__ = '1.0.0'
+__module_version__ = __version__
 __module_link__ = None
 __module_category__ = ['builtin', 'core']
 __module_compatibility__ = ['all']
@@ -48,7 +49,8 @@ class modulesHelper:
         self.templates = {
             'documentation': Path(__file__).parent / 'templates/documentation.tmpl',
             'module': Path(__file__).parent / 'templates/module.tmpl',
-            'scenario': Path(__file__).parent / 'templates/scenario.tmpl'
+            'scenario': Path(__file__).parent / 'templates/scenario.tmpl',
+            'github_release': Path(__file__).parent / 'templates/github-release.tmpl',
         }
         if self.settings.get('modules:module', {}).get('silent_load', 'True') == 'True':
             not_silent = False
@@ -93,10 +95,11 @@ class modulesHelper:
                     name = helper.__module_name__
                     author = helper.__module_author__
                     version = helper.__module_version__
+                    builtin = 'core' in helper.__module_category__ or 'builtin' in helper.__module_category__
                     link = helper.__module_link__
                     compatibility = 'all' in helper.__module_compatibility__ or SYSTEM_PLATFORM in helper.__module_compatibility__
                     size = get_dir_size(Path(helper.__file__).parent)
-                    return f"Name: {name}\nAuthor: {author}\nVersion: {version}\nLink: {link}\nPath: {Path(helper.__file__).parent}\nCompatible: {'Yes' if compatibility else 'No'}\nSize: {format_bytes(size)}" if pretty else {'name': name, 'author': author, 'version': version, 'link': link, 'path': Path(helper.__file__).parent, 'compatibility': compatibility, 'size': size}
+                    return f"Name: {name}\nAuthor: {author}\nVersion: {version}\nBuiltin: {'Yes' if builtin else 'No'}\nLink: {link}\nPath: {Path(helper.__file__).parent}\nCompatible: {'Yes' if compatibility else 'No'}\nSize: {format_bytes(size)}" if pretty else {'name': name, 'author': author, 'version': version, 'builtin': builtin, 'link': link, 'path': Path(helper.__file__).parent, 'compatibility': compatibility, 'size': size}
             return f"Module with name '{module}' not found." if pretty else {}
 
     def disable(self, module: str):
@@ -152,23 +155,36 @@ class modulesHelper:
         """
         module_template = ""
         install_scenario_template = ""
+        uninstall_scenario_template = ""
+        release_template = ""
         with open(self.templates.get('module'), 'r', encoding='utf-8') as module_template_file:
             module_template = module_template_file.read()
         with open(self.templates.get('scenario'), 'r', encoding='utf-8') as install_scenario_template_file:
             install_scenario_template = install_scenario_template_file.read()
         with open(self.templates.get('scenario'), 'r', encoding='utf-8') as uninstall_scenario_template_file:
             uninstall_scenario_template = uninstall_scenario_template_file.read()
+        with open(self.templates.get('github_release'), 'r', encoding='utf-8') as release_template_file:
+            release_template = release_template_file.read()
         if module_template:
             module_template = module_template.format(module = module, name = name, author = author, version = version, systems = ", ".join(f"'{system}'" for system in systems.split(",")))
+        if release_template:
+            release_template = release_template.format(module = module)
         module_path = Path(f"{HELPERS_DIR}/{module}").absolute()
+        github_path = Path(f"{HELPERS_DIR}/{module}/.github/workflows").absolute()
         init_path= Path(f"{module_path}/__init__.py").absolute()
         install_scenario_path = Path(f"{module_path}/INSTALL.sc").absolute()
         uninstall_scenario_path = Path(f"{module_path}/UNINSTALL.sc").absolute()
+        release_path = github_path / 'create-release.yml'
+        os.makedirs(github_path, mode=0o750, exist_ok=True)
         os.makedirs(module_path, mode=0o750, exist_ok=True)
         if (init_path.exists() or install_scenario_path.exists() or uninstall_scenario_path.exists()) and force:
             os.remove(init_path)
             os.remove(install_scenario_path)
             os.remove(uninstall_scenario_path)
+
+        if not release_path.exists():
+            with open(release_path, 'x', newline="\n", encoding='utf-8') as release_file:
+                release_file.write(release_template)
 
         if not install_scenario_path.exists():
             with open(install_scenario_path, 'x', newline="\n", encoding='utf-8') as install_scenario_file:
@@ -304,6 +320,30 @@ class modulesHelper:
         Usage:
             modules renderhash <module_name>
         """
+        def process_files(helper_path, directory, module, hash_list):
+            for item in directory.iterdir():
+                if item.name in ['.git', '.github']:
+                    continue
+                if item.is_dir():
+                    process_files(helper_path, item, module, hash_list)
+                else:
+                    relative_path = item.relative_to(helper_path).parent
+                    file_name = item.name
+                    
+                    if file_name in ['SHA256', 'CHANGELOG.md', 'README.md']:
+                        continue
+                    
+                    file_parent = f'{relative_path.as_posix()}'
+
+                    if file_parent == '.':
+                        full_path = f"{file_parent}/{file_name}"
+                    else:
+                        full_path = f"./{file_parent}/{file_name}"
+                    
+                    hash_obj = {full_path: get_file_sha256(item)}
+                    hash_list.append(hash_obj)
+            return hash_list
+
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         if module:
@@ -311,18 +351,7 @@ class modulesHelper:
             for helper in all_helpers:
                 if helper.__name__.split('.')[-1] == module:
                     helper_path = Path(helper.__file__).parent
-                    for file in helper_path.rglob('*'):
-                        file_obj= Path(file)
-                        file_parent = file_obj.parent.name
-                        if file_parent == module:
-                            file_parent = '.'
-                        else:
-                            file_parent = f"./{file_parent}"
-                        file_name = file_obj.name
-                        if file_name in ['SHA256', 'CHANGELOG.md', 'README.md'] or file_obj.is_dir():
-                            continue
-                        hash_obj = {f"{file_parent}/{file_name}": get_file_sha256(file)}
-                        hash_list.append(hash_obj)
+                    hash_list = process_files(helper_path, helper_path, module, hash_list)
                     hash_list_file = helper_path / 'SHA256'
                     with open(hash_list_file, 'w' if hash_list_file.exists() else 'x', newline="\n", encoding='utf-8') as f:
                         f.write(yaml.dump(hash_list))
@@ -352,6 +381,66 @@ class modulesHelper:
             print_message("Rendering module hash table, please wait...", force=True)
             self.renderhash(module)
             print_message(pack_module(module, module_version, location), force=True)
+
+    def push(self, module: str):
+        """
+        Method pushes module source code to it`s repo.
+        NOTE: Before using this method, configure your GitHub account to use SSH keys.
+        Usage:
+            modules push <module_name>
+        """
+        module_info = self.info(module, pretty=False)
+        if not module_info:
+            return
+
+        module_version = module_info['version']
+        module_link = module_info['link']
+        module_path = module_info['path']
+        
+        if module_link and module_path:
+            print_message("Rendering module requirements, please wait...", force=True)
+            self.renderreq(module)
+            print_message("Rendering module manual, please wait...", force=True)
+            self.rendermd(module)
+            print_message("Rendering module hash table, please wait...", force=True)
+            self.renderhash(module)
+
+            module_git_repo = Path(module_path) / '.git'
+            repo = Repo.init(module_path) if not module_git_repo.exists() else Repo(module_path)
+            remote_name = "origin"
+
+            remote = repo.create_remote(remote_name, github_repo_to_ssh(module_link)) if remote_name not in [r.name for r in repo.remotes] else repo.remote(remote_name)
+            
+            repo.remotes.origin.fetch()
+            if not repo.head.is_valid():
+                print_message("The repository is empty or HEAD is not valid. Creating an initial commit.", WARNING)
+                repo.index.commit('Initial commit')
+
+            if any(ref.remote_head in ['master', 'main'] for ref in repo.remotes.origin.refs):
+                branch_name = re.sub(r'\.\d+\.\d+', '.x.x', module_version)
+                new_branch = repo.create_head(branch_name)
+                new_branch.checkout()
+            else:
+                branch_name = 'master'
+
+            repo.git.add(all=True)
+            commit_message = f'{module} version {module_version} automatically pushed to repo via modules module.'
+            repo.index.commit(commit_message)
+
+            if module_version not in repo.tags:
+                repo.create_tag(module_version, message=commit_message)
+
+            try:
+                remote.push(branch_name)
+                remote.push(repo.tags[-1])
+                return f"Module '{module}' successfully pushed to {module_link}."
+            except Exception as e:
+                if "no upstream branch" in str(e):
+                    repo.git.push('--set-upstream', remote_name, branch_name)
+                    remote.push(repo.tags[-1])
+                    return f"Module '{module}' successfully pushed to {module_link}."
+                else:
+                    print_message(f'Something went wrong when trying to push module’s contents: {e}.', ERROR)
 
     class update:
         """

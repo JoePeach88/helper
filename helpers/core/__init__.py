@@ -9,7 +9,7 @@ from helpers.modules.utils import github_url_to_releases_api
 __module_disabled_methods__ = []
 __module_name__ = 'coreHelper'
 __module_author__ = 'JoePeach88'
-__module_version__ = '1.0.0'
+__module_version__ = __version__
 __module_link__ = None
 __module_category__ = ['builtin', 'core']
 __module_compatibility__ = ['all']

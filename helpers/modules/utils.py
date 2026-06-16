@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 from env import UNPACK_FILE_FILTER
 from helpers import print_message, print_choice, WARNING, ERROR, HELPERS_DIR, install_requirements, get_system_based_value
-from helpers.core.utils import download_file, retrieve_json, github_url_to_releases_api
+from helpers.core.utils import download_file, retrieve_json, github_url_to_releases_api, github_repo_to_ssh
 
 
 def _run_commands(commands, phase, command_kind, scenario_type):
@@ -76,6 +76,26 @@ def get_file_sha256(file: str):
 
 
 def install_module(module_name: str, module_link: str, module_version: str = None, link_type: str = 'url', skip_check: bool = False, force: bool = False):
+    def process_files(helper_path, directory, files_list):
+        for item in directory.iterdir():
+            if item.is_dir():
+                process_files(helper_path, item, files_list)
+            else:
+                relative_path = item.relative_to(helper_path).parent
+                file_name = item.name
+
+                if file_name in ['SHA256', 'CHANGELOG.md', 'README.md']:
+                    continue
+                
+                file_parent = f'{relative_path.as_posix()}'
+
+                if file_parent == '.':
+                    full_path = f"{file_parent}/{file_name}"
+                else:
+                    full_path = f"./{file_parent}/{file_name}"
+                files_list.append(full_path)
+        return files_list
+
     valid_link_types = {'url', 'file'}
     helper_changelog = ""
     if link_type not in valid_link_types:
@@ -98,7 +118,7 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
             if github_module_link:
                 helper_releases_data = retrieve_json(github_module_link)
                 if not isinstance(helper_releases_data, list):
-                    print_message(f"Failed to retrieve updates of module '{module_name}'.", WARNING)
+                    print_message(f"Failed to retrieve updates of module '{module_name}'.", WARNING, force=True)
                     return
                 if not module_version:
                     helper_last_release = helper_releases_data[0]
@@ -138,22 +158,12 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
                     sha256_sums = yaml.safe_load(f.read())
                 correct_file_list = []
                 correct_file_list = [list(sha256_sum.keys())[0] for sha256_sum in sha256_sums]
-                current_files = glob.glob(str(install_dest / "*"), recursive=True)
                 files_list_prepared = []
-                for file in current_files:
-                    file_obj= Path(file)
-                    file_parent = file_obj.parent.name
-                    if file_parent == module_name:
-                        file_parent = '.'
-                    else:
-                        file_parent = f"./{file_parent}"
-                    file_name = file_obj.name
-                    if file_name in ['SHA256', 'CHANGELOG.md', 'README.md'] or file_obj.is_dir():
-                        continue
-                    files_list_prepared.append(f"{file_parent}/{file_name}")
+                files_for_remove = []
+                files_list_prepared = process_files(install_dest, install_dest, files_list_prepared)
                 for current_file in files_list_prepared:
                     if current_file not in correct_file_list:
-                        sha256_incorrect = True
+                        files_for_remove.append(current_file)
                 for sha256_sum in sha256_sums:
                     sha256_correct_file = list(sha256_sum.keys())[0]
                     sha256_correct_file = install_dest / sha256_correct_file
@@ -164,6 +174,8 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
                     if sha256_correct_sum != sha256_current_sum:
                         print_message(f"File '{sha256_correct_file}' has incorrect sha256 sum.\nCorrect: {sha256_correct_sum}\nCurrent: {sha256_current_sum}")
                         sha256_incorrect = True
+                for file in files_for_remove:
+                    os.remove(f'{install_dest}/{file}')
             if sha256_incorrect or not sha256_file.exists():
                 print_message(f"File 'SHA256' not found or some file has incorrect sha256 sum, it means module can be infected, removing it...", WARNING, force=True)
                 uninstall_module(module_name, force=True)

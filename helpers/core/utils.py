@@ -13,6 +13,33 @@ headers = {
     'authorization': 'Bearer {token}'.format(token=GITHUB_TOKEN)
 }
 
+if GITHUB_TOKEN in ['', ' '] or not GITHUB_TOKEN:
+    print_message('GitHub token not set, update, install and check functions of modules and core modules will work incorrect, set token via `helper core config set core:remote gh_api_token <your token here>`.', WARNING, force=True)
+
+
+def github_repo_to_ssh(repo_url: str):
+    if not repo_url:
+        return
+    repo_url = repo_url.rstrip('/')
+
+    if not repo_url.startswith('https://github.com/'):
+        print_message(f"Not a valid GitHub URL: {repo_url}", WARNING)
+        return
+
+    path = repo_url.replace('https://github.com/', '')
+    parts = path.split('/')
+
+    if len(parts) < 2:
+        print_message(f"Invalid GitHub repository URL: {repo_url}", WARNING)
+        return
+
+    owner = parts[0]
+    repo = parts[1]
+
+    ssh_repo_url = f"git@github.com:{owner}/{repo}.git"
+    
+    return ssh_repo_url
+
 
 def github_url_to_releases_api(github_url: str):
     if not github_url:

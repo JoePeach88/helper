@@ -11,6 +11,7 @@ Module to work with helper modules.
 - [install](#install)
 - [ls](#ls)
 - [pack](#pack)
+- [push](#push)
 - [renderhash](#renderhash)
 - [rendermd](#rendermd)
 - [renderreq](#renderreq)
@@ -30,7 +31,7 @@ helper modules install modules --location None
 
 **Author: [JoePeach88](https://github.com/JoePeach88)**
 
-**Version: 1.0.0**
+**Version: 1.1.0**
 
 **Supported platforms:**
 
@@ -99,6 +100,15 @@ modules pack <module_name>
 modules pack <module_name> --location <location>
 3. To pack few modules:
 modules pack <module1> <module2> --location <location>
+```
+
+### push
+
+```
+Method pushes module source code to it`s repo.
+NOTE: Before using this method, configure your GitHub account to use SSH keys.
+Usage:
+modules push <module_name>
 ```
 
 ### renderhash

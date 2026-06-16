@@ -10,7 +10,7 @@ from colorama import Fore
 from typing import Any, Optional
 
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 __version_name__ = 'summer'
 __release__ = 'stable'
 __product_name__ = 'helper'
