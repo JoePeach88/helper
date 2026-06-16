@@ -25,7 +25,7 @@ pip_ignore_unix = []
 
 def exit_code_check(system: str = 'Windows'):
     if system == 'Windows':
-        return "\tif ($? -ne 0) {$exit_code = $?}\n"
+        return "\tif (-not $?) {$exit_code = $?}\n"
     else:
         return "\tif [ $? -ne 0 ]; then\n\t\texit_code=$?\n\tfi\n"
 
@@ -37,7 +37,7 @@ def windows_installer(structure: list, requirements: list):
         '} until ($response -match \'^(y|n)$\')\n',
         'if ($response -eq \'y\') {\n',
         '\tif (($location = Read-Host "Specify install location (default: ./)") -eq \'\') { $location = "./" }',
-        '\t$exit_code=0\n',
+        '\t$exit_code = $true\n',
         '\tWrite-Host "Preparing structure..."\n'
     ]
     installer_path = Path('./setup.ps1')
@@ -74,8 +74,8 @@ def windows_installer(structure: list, requirements: list):
         commands.append(f"\tpip install -r $location/{requirement.as_posix()}\n")
         commands.append(exit_code_check())
     commands.extend([
-        "\tif ($exit_code -ne 0) {\n",
-        "\t\tWrite-Host 'Something went wrong during installation. Abort.'\n",
+        "\tif (-not $exit_code) {\n",
+        "\t\tWrite-Host \"Something went wrong during installation. Abort.\nLast exit code: $exit_code\"\n",
         "\t} else {\n",
         f"\t\tWrite-Host '{__product_name__} CLI v.{__version__} ({__version_name__}) (build date: {datetime.now()}) successfully installed!'\n",
         f"\t\tRemove-Item -Force ./{installer_path.as_posix()}\n",
@@ -148,7 +148,7 @@ EOF
         commands.append(exit_code_check('Unix'))
     commands.extend([
         "\tif [ $exit_code -ne 0 ]; then\n",
-        "\t\techo \"Something went wrong during installation. Abort.\"\n",
+        "\t\techo \"Something went wrong during installation. Abort.\nLast exit code: ${exit_code}\"\n",
         "\telse\n",
         f"\t\techo '{__product_name__} CLI v.{__version__} ({__version_name__}) (build date: {datetime.now()}) successfully installed!'\n",
         f"\t\trm -f ./{installer_path.as_posix()}\n",
