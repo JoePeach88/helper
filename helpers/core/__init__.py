@@ -14,7 +14,7 @@ __module_link__ = None
 __module_category__ = ['builtin', 'core']
 __module_compatibility__ = ['all']
 __module_dependencies__ = []
-__module_status__ = 'dev'
+__module_status__ = 'stable'
 __methods_static_aliases__ = {}
 
 
