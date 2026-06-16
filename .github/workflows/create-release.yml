@@ -50,6 +50,7 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./setup.ps1
           asset_name: setup.ps1
+          asset_content_type: application/octet-stream
 
       - name: "[Step 7] Upload Unix Installer"
         id: upload-unix-installer
@@ -60,3 +61,4 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./setup.sh
           asset_name: setup.sh
+          asset_content_type: application/octet-stream
