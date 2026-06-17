@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - '*.*'
+      - '*.*-dev*'
 
 jobs:
   build:
@@ -27,35 +28,33 @@ jobs:
         continue-on-error: true
 
       - name: "[Step 4] Execute Python Script"
-        run: python build.py
-  
-      - name: "[Step 5] Create stable Release"
+        id: build
+        run: |
+          RELEASE_NAME=$(python build.py | tail -n 1)
+          echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: "[Step 5 Check Release Type]"
+        id: check_type
+        run: |
+          if [[ "${{ github.ref_name }}" == *"-dev"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: "[Step 6] Create Release"
         id: create_release
         uses: actions/create-release@v1
-        if: contains(github.event.head_commit.message, 'STABLE:')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: helper v.${{ github.ref }} (stable)
+          release_name: ${{ steps.build.outputs.release_name }} ${{ steps.check_type.outputs.is_prerelease == 'true' && '(dev)' || '(stable)' }}
           body_path: ./CHANGELOG.md
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.check_type.outputs.is_prerelease == 'true' }}
 
-      - name: "[Step 5] Create develop Release"
-        id: create_release
-        uses: actions/create-release@v1
-        if: contains(github.event.head_commit.message, 'DEV:')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: helper v.${{ github.ref }} (develop)
-          body_path: ./CHANGELOG.md
-          draft: false
-          prerelease: true
-
-      - name: "[Step 6] Upload Win Installer"
+      - name: "[Step 7] Upload Win Installer"
         id: upload-win-installer
         uses: actions/upload-release-asset@v1
         env:
@@ -66,7 +65,7 @@ jobs:
           asset_name: setup.ps1
           asset_content_type: application/octet-stream
 
-      - name: "[Step 7] Upload Unix Installer"
+      - name: "[Step 8] Upload Unix Installer"
         id: upload-unix-installer
         uses: actions/upload-release-asset@v1
         env:
