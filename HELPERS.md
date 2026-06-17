@@ -24,8 +24,8 @@ Each helper is a Python module under `helpers/` that exposes methods as CLI comm
 
 Built-in modules:
 
-- [`core`](./core/README.md) - manages helper core settings and updates.
-- [`modules`](./modules/README.md) - manages helper modules and its updates.
+- [`core`](https://github.com/JoePeach88/helper/tree/1.x.x/helpers/core/README.md) - manages helper core settings and updates.
+- [`modules`](https://github.com/JoePeach88/helper/tree/1.x.x/helpers/modules/README.md) - manages helper modules and its updates.
 
 ## Directory Structure
 
@@ -39,7 +39,7 @@ helpers
 
 ## Quick Start
 
-You can quickly create a module using the built-in [`modules`](./modules/README.md) module:
+You can quickly create a module using the built-in [`modules`](https://github.com/JoePeach88/helper/tree/1.x.x/helpers/modules/README.md) module:
 
 ```bash
 modules create <module_name> --name ModuleName --author Author --version 1.0.0 --systems Linux,Windows,Darwin

@@ -17,7 +17,7 @@ helper <module> <module_method> <module_args>
 ## Requirements
 
 * **Python >= 3.7**
-* **Installed requirements from [requirements.txt](./requirements.txt)**
+* **Installed requirements from [requirements.txt](https://github.com/JoePeach88/helper/blob/1.x.x/requirements.txt)**
 
 ## Installation
 
