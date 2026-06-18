@@ -207,5 +207,5 @@ if __name__ == '__main__':
         print_message(f"Making installer for system '{system}'...", debug=True)
         make_installer(final_structure_files, requirements, system)
     print_message('Done.', 'SUCCESS', debug=True)
-    print('===========\nRelease info:\n===========')
+    print(f'{"=" * 48}\n\t\tRelease info:\n{"=" * 48}')
     print(f'{__version__} ({__version_name__}) ({datetime.now()})')
