@@ -30,7 +30,7 @@ jobs:
       - name: "[Step 4] Execute Python Script"
         id: build
         run: |
-          RELEASE_NAME=$(python build.py | tail -n 1)
+          RELEASE_NAME=$(python ./build.py | tail -n 1)
           echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
 
       - name: "[Step 5 Check Release Type]"
