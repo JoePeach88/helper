@@ -92,29 +92,47 @@ class coreHelper:
             self.settings = settings
             self.core_url = github_url_to_releases_api('https://github.com/JoePeach88/helper')
 
-        def check(self, pretty: bool = True):
+        def check(self, pretty: bool = True, dev: bool = False):
             """
             Method checks updates for helper core.
             Usage:
                 core update check
             """
-            if self.core_url:
-                release_data = retrieve_json(self.core_url)
-                if not isinstance(release_data, list) or not release_data:
-                    print_message(f"Failed to retrieve core updates.", WARNING)
-                    return "Failed to retrieve core updates." if pretty else []
-                core_for_update = []
-                core_last_release = release_data[0]
-                core_remote_download_link = core_last_release.get('tarball_url')
-                core_remote_version = core_remote_download_link.split('/')[-1]
-                core_remote_changelog = core_last_release.get('body')
-                if __version__ < core_remote_version:
-                    update_data = {'name': 'core', 'current_version': __version__, 'remote_version': core_remote_version} if pretty else {'name': 'core', 'current_version': __version__, 'remote_version': core_remote_version, 'remote_download_link': core_remote_download_link, 'changelog': core_remote_changelog}
-                    core_for_update.append(update_data)
+            if not self.core_url:
+                return [] if not pretty else "Failed to retrieve core updates."
+
+            release_data = retrieve_json(self.core_url)
+            if not isinstance(release_data, list) or not release_data:
+                print_message("Failed to retrieve core updates.", WARNING)
+                return "Failed to retrieve core updates." if pretty else []
+
+            core_for_update = []
+            core_remote_download_link, core_remote_version, core_remote_changelog = None, None, None
+
+            for core_last_release in release_data:
+                is_dev_release = 'dev' in core_last_release['tag_name']
+                if (is_dev_release and dev) or (not is_dev_release and not dev):
+                    core_remote_download_link = core_last_release.get('tarball_url')
+                    core_remote_version = core_last_release['tag_name'].split('-')[0]
+                    core_remote_changelog = core_last_release.get('body')
+                    break
+
+            if core_remote_version and (__version__ < core_remote_version or (__version__ <= core_remote_version and 'dev' in core_last_release['tag_name'])):
+                update_data = {
+                    'name': 'core',
+                    'current_version': __version__,
+                    'remote_version': core_remote_version,
+                }
+                if not pretty:
+                    update_data.update({
+                        'remote_download_link': core_remote_download_link,
+                        'changelog': core_remote_changelog,
+                    })
+                core_for_update.append(update_data)
+
             if pretty:
                 return pd.DataFrame(core_for_update).to_string(index=False, justify='left') if core_for_update else "All modules are up-to-date."
-            else:
-                return core_for_update if core_for_update else []
+            return core_for_update if core_for_update else []
 
         def install(self):
             """
