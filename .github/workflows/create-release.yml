@@ -33,7 +33,7 @@ jobs:
           RELEASE_NAME=$(python ./build.py | tail -n 1)
           echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: "[Step 5 Check Release Type]"
+      - name: "[Step 5] Check Release Type"
         id: check_type
         run: |
           if [[ "${{ github.ref_name }}" == *"-dev"* ]]; then
