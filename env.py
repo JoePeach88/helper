@@ -12,7 +12,7 @@ from typing import Any, Optional
 
 __version__ = '1.1.0'
 __version_name__ = 'summer'
-__release__ = 'stable'
+__release__ = 'dev'
 __product_name__ = 'helper'
 __required_python__ = (3, 7)
 
