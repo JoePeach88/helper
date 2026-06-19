@@ -6,3 +6,7 @@
 * Added information about builtin module or not
 * Added push to GitHub function
 * Fixed bug with incorrect hashing and installation when modules has nested folder structure
+
+### Core module
+
+* Fixed bug with update installation

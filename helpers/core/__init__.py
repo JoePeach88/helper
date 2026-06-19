@@ -124,8 +124,7 @@ class coreHelper:
             """
             core_for_update = self.check(pretty=False)
             if not core_for_update:
-                print_message("Nothing to install.", force=True)
-                return
+                return "Nothing to install."
             if core_for_update:
                 core_for_update = core_for_update[0]
                 return install_update(core_for_update['remote_version'], core_for_update['remote_download_link'])

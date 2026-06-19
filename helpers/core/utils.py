@@ -134,7 +134,7 @@ def collect_requirements(structure: list):
 
 
 def install_update(version: str, update_link: str):
-    install_dest = Path(f'./').absolute()
+    install_dest = Path(__file__).resolve().parent.parent.parent.absolute()
     with tempfile.TemporaryDirectory() as tmp_dir:
         archive_path = Path(tmp_dir) / f'core-update-{version}.tar.gz'
         print_message(f"Downloading core update version '{version}' to '{archive_path}'.")
