@@ -157,4 +157,4 @@ def install_update(version: str, update_link: str):
     print_message(f'Installing requirements...')
     for req in requirements:
         install_requirements(f'core update {version}', Path(f'./{req}').as_posix())
-    print_message(f'Core update version {version} successfully installed.', force=True)
+    return f'Core update version {version} successfully installed.'
