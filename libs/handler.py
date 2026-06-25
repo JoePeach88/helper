@@ -1,10 +1,19 @@
 # CLI DOCUMENTATION BLOCK START #
 """
+# helper CLI
+**The CLI which interpretates python modules as CLI commands.**
+
+```
+Usage:
+helper <module> <module_method> <module_args>
+
+Helpfull commands:
 helper version - to view information about helper cli version and it installed modules.
 helper debug - to view cli debug information.
 helper modules ls - to view all available modules.
 helper <module_name> man - to view manual for helper module.
 helper <module_name> help - to view help information for module, show all available methods and its aliases.
+```
 """
 #  CLI DOCUMENTATION BLOCK END  #
 
@@ -15,7 +24,7 @@ from pathlib import Path
 from difflib import get_close_matches
 from env import __release__, __version__, __version_name__, __product_name__, IS_ADMIN, SYSTEM_PLATFORM, LESS_LINES, LOGS_LEVELS, LOGS_PATH, PIP_PROXY, DEBUG, EMOJI_ENABLED, UNPACK_FILE_FILTER, HRDRM_ENABLED, PIP_BREAK_SYSTEM_PACKAGES, GC_ENABLED
 from helpers import _find_module, _find_settings, _prepare_helper, _find_disabled_module, list_helpers, Helper
-from libs.messages import print_message, less, WARNING, ERROR
+from libs.messages import print_message, render_md, less, WARNING, ERROR
 
 
 def _get_attribute(obj, name, helper):
@@ -45,6 +54,8 @@ def _print_help(obj, helper = None, full_output: bool = True):
         else:
             doc = obj
         if doc:
+            doc = doc.replace('\n/g', '\n')
+            doc = render_md(doc)
             if full_output:
                 print(doc)
             else:
@@ -214,10 +225,10 @@ def prepare_doc(obj, helper = None):
             if not method.startswith('_') and not method in helper.module.__module_disabled_methods__ and (callable(method_object) or not isinstance(method_object, (list, str, dict, int, float, bool, tuple, set, type(helper.helper), type(None)))):
                 has_public_methods = True
                 alias = aliases.get(method, [])
-                formatted_methods.append(f"{method}\nAliases: {', '.join(alias)}\n")
+                formatted_methods.append(f"**{method}**\n>Aliases: {', '.join(alias)}\n")
         if not has_public_methods:
             return
-        documentation += f'\nAvailable methods:\n\n{module_name} ' + f'\n{module_name} '.join(formatted_methods)
+        documentation += f'\n\nAvailable methods:\n\n{module_name} ' + f'\n{module_name} '.join(formatted_methods)
     return documentation if documentation else None
 
 

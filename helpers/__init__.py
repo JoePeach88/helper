@@ -3,8 +3,6 @@ import importlib.util
 import sys
 import re
 import subprocess
-from rich.console import Console
-from rich.markdown import Markdown
 from pathlib import Path
 from env import loader, config_file, SYSTEM_PLATFORM, HRDRM_ENABLED, PIP_PROXY, PIP_BREAK_SYSTEM_PACKAGES, get_system_based_value
 
@@ -13,7 +11,7 @@ HELPERS_DIR = Path(__file__).resolve().parent
 HELPERS_PARENT_DIR = HELPERS_DIR.parent
 if str(HELPERS_PARENT_DIR) not in sys.path:
     sys.path.insert(0, str(HELPERS_PARENT_DIR))
-from libs.messages import print_message, print_choices, print_choice, WARNING, ERROR, SUCCESS, INFO
+from libs.messages import print_message, print_choices, print_choice, render_code, render_md, WARNING, ERROR, SUCCESS, INFO
 
 
 def install_requirements(module_name: str, requirements_file: str):
@@ -210,17 +208,14 @@ class Helper:
             print_message(f"Failed to initialize helper '{helper}': {e}", ERROR)
 
     def version(self):
-        return self.module.__module_version__
+        return f"{self.module.__module_name__}: {self.module.__module_version__}"
 
     def man(self):
         readme = Path(self.module.__file__).parent / 'README.md'
         helper_name = Path(self.module.__file__).parent.stem
         if readme.exists():
             with open(readme, encoding='utf-8') as readme_file:
-                console = Console(record=True, highlight=True, soft_wrap=True)
-                with console.capture() as capture:
-                    console.print(Markdown(readme_file.read()))
-                return capture.get()
+                return render_md(readme_file.read())
         return f"Module '{helper_name}' has no available manual."
 
     def requirements(self):

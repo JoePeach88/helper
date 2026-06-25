@@ -1,6 +1,6 @@
 # modules
 
-Module to work with helper modules.
+**Module to work with helper modules.**
 
 ## Methods list
 
@@ -43,56 +43,56 @@ all
 
 ### create
 
+**Method creates empty module from template for development.**
 ```
-Method creates empty module from template for development.
 Usage:
 modules create <module_name> --name ModuleName --author Author --version 1.0.0 --systems Linux,Windows,Darwin
 ```
 
 ### disable
 
+**Method disables module.**
 ```
-Method disables module.
 Usage:
 modules disable --module <module_name>
 ```
 
 ### enable
 
+**Method enables module.**
 ```
-Method enables module.
 Usage:
 modules enable --module <module_name>
 ```
 
 ### info
 
+**Method displays information about installed module.**
 ```
-Method displays information about installed module.
 Usage:
 modules info --module <module_name>
 ```
 
 ### install
 
+**Method installs specified module from link or from path.**
 ```
-Method installs specified module from link or from path.
 Usage:
 modules install <module_name> --location <link or path>
 ```
 
 ### ls
 
+**Method displays all available modules.**
 ```
-Method displays all available modules.
 Usage:
 modules ls
 ```
 
 ### pack
 
+**Method prepare module and packs it to tar archive.**
 ```
-Method prepare module and packs it to tar archive.
 Usage:
 1. To default pack location:
 modules pack <module_name>
@@ -104,55 +104,53 @@ modules pack <module1> <module2> --location <location>
 
 ### push
 
+**Method pushes module source code to it`s repo.**
+>NOTE: Before using this method, configure your GitHub account to use SSH keys.
 ```
-Method pushes module source code to it`s repo.
-NOTE: Before using this method, configure your GitHub account to use SSH keys.
 Usage:
 modules push <module_name>
 ```
 
 ### renderhash
 
+**Method renders hash for each module file.**
 ```
-Method renders hash for each module file.
 Usage:
 modules renderhash <module_name>
 ```
 
 ### rendermd
 
+**Module renders README.md.**
 ```
-Module renders README.md.
 Usage:
 modules rendermd <module_name>
 ```
 
 ### renderreq
 
+**Module renders requirements.txt.**
 ```
-Module renders requirements.txt.
 Usage:
 modules renderreq <module_name>
 ```
 
 ### uninstall
 
+**Method uninstalls specified module.**
 ```
-Method uninstalls specified module.
 Usage:
 modules uninstall <module_name>
 ```
 
 ## update
 
-```
-Module to manipulate and check updates for modules.
-```
+**Module to manipulate and check updates for modules.**
 
 ### changes
 
+**Method prints changelog for module.**
 ```
-Method prints changelog for module.
 Usage:
 1. With prompt to select available modules.
 modules update changes
@@ -162,8 +160,8 @@ modules update changes --module <module_name>
 
 ### check
 
+**Method checks updates for modules or specified module.**
 ```
-Method checks updates for modules or specified module.
 Usage:
 1. Without specified module name:
 modules update check
@@ -173,8 +171,8 @@ modules update check --module module_name
 
 ### install
 
+**Method updates modules or specified module.**
 ```
-Method updates modules or specified module.
 Usage:
 1. Without specified module name:
 modules update install

@@ -2,6 +2,9 @@ import os
 import inspect
 import traceback
 import sys
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.syntax import Syntax
 from datetime import datetime
 from pathlib import Path
 from env import BLUE, YELLOW, RED, GREEN, RESET, LOGS_PATH, LOGS_LEVELS, DEBUG, LESS_LINES, SYSTEM_PLATFORM, EMOJI_ENABLED
@@ -29,6 +32,20 @@ def __get_caller_module_name():
     if module is None:
         return None, None
     return module.__file__, function
+
+
+def render_code(content: str, lexer: str):
+    console = Console(record=True, highlight=True, soft_wrap=True)
+    with console.capture() as capture:
+        console.print(Syntax(content, lexer))
+    return capture.get()
+
+
+def render_md(content: str):
+    console = Console(record=True, highlight=True, soft_wrap=True)
+    with console.capture() as capture:
+        console.print(Markdown(content))
+    return capture.get()
 
 
 def print_message(message: str, message_level: str = INFO, force: bool = False, debug: bool = False):

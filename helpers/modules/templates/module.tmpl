@@ -1,4 +1,4 @@
-from helpers import print_message, print_choices, print_choice, SUCCESS, INFO, WARNING, ERROR
+from helpers import print_message, print_choices, print_choice, render_code, render_md, SUCCESS, INFO, WARNING, ERROR
 
 
 # Module global settings
@@ -16,7 +16,7 @@ __methods_static_aliases__ = {{}}
 
 class {module}Helper:
     """
-    Module description here.
+    **Module description here.**
     """
     def __init__(self, settings: dict):
         self.settings = settings
@@ -26,8 +26,10 @@ class {module}Helper:
 
     def echo(self, arg):
         """
-        Method returns your argument.
+        **Method returns your argument.**
+        ```
         Usage:
             {module} echo <some_argument>
+        ```
         """
         return arg

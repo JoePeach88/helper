@@ -1,6 +1,6 @@
 # core
 
-Module to work with helper core.
+**Module to work with helper core.**
 
 ## Methods list
 
@@ -8,6 +8,11 @@ Module to work with helper core.
 - [get](#get)
 - [ls](#ls)
 - [set](#set)
+- [**logs**](#logs) [module]
+- [flush](#flush)
+- [ls](#ls)
+- [rm](#rm)
+- [view](#view)
 - [**update**](#update) [module]
 - [check](#check)
 - [install](#install)
@@ -34,30 +39,28 @@ all
 
 ## config
 
-```
-Module to manipulate helper config parameters.
-```
+**Module to manipulate helper config parameters.**
 
 ### get
 
+**Method retrieves config data.**
 ```
-Method retrieves config data.
 Usage:
 core config get <section> <option>
 ```
 
 ### ls
 
+**Method displays all config data.**
 ```
-Method displays all config data.
 Usage:
 core config ls
 ```
 
 ### set
 
+**Method sets config data.**
 ```
-Method sets config data.
 Usage:
 1. Simple value set:
 core config set <section> <option> <value>
@@ -65,24 +68,58 @@ core config set <section> <option> <value>
 core config set <section> <option> <value> --system-based
 ```
 
+## logs
+
+**Module to manipulate with logs.**
+
+### flush
+
+**Method removes all log files.**
+```
+Usage:
+core logs flush
+```
+
+### ls
+
+**Method displays logs.**
+```
+Usage:
+core logs ls
+```
+
+### rm
+
+**Method removes log file.**
+```
+Usage:
+core logs rm
+```
+
+### view
+
+**Method displays log content.**
+```
+Usage:
+core logs view <log>
+```
+
 ## update
 
-```
-Module updates helper core.
-```
+**Module updates helper core.**
 
 ### check
 
+**Method checks updates for helper core.**
 ```
-Method checks updates for helper core.
 Usage:
 core update check
 ```
 
 ### install
 
+**Method updates helper core.**
 ```
-Method updates helper core.
 Usage:
 core update install
 ```

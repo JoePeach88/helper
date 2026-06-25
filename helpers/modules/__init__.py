@@ -41,7 +41,7 @@ __methods_static_aliases__ = {
 
 class modulesHelper:
     """
-    Module to work with helper modules.
+    **Module to work with helper modules.**
     """
     def __init__(self, settings: dict):
         self.settings = settings
@@ -67,9 +67,11 @@ class modulesHelper:
 
     def ls(self, all: bool = False, pretty: bool = True):
         """
-        Method displays all available modules.
+        **Method displays all available modules.**
+        ```
         Usage:
             modules ls
+        ```
         """
         helpers_list = []
         helpers = self.helpers
@@ -81,9 +83,11 @@ class modulesHelper:
 
     def info(self, module: str = None, pretty: bool = True):
         """
-        Method displays information about installed module.
+        **Method displays information about installed module.**
+        ```
         Usage:
             modules info --module <module_name>
+        ```
         """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
@@ -104,9 +108,11 @@ class modulesHelper:
 
     def disable(self, module: str):
         """
-        Method disables module.
+        **Method disables module.**
+        ```
         Usage:
             modules disable --module <module_name>
+        ```
         """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
@@ -118,9 +124,11 @@ class modulesHelper:
 
     def enable(self, module: str):
         """
-        Method enables module.
+        **Method enables module.**
+        ```
         Usage:
             modules enable --module <module_name>
+        ```
         """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
@@ -132,26 +140,32 @@ class modulesHelper:
 
     def install(self, module: str, location: str, version: str = None, force: bool = False, skip_check: bool = False):
         """
-        Method installs specified module from link or from path.
+        **Method installs specified module from link or from path.**
+        ```
         Usage:
             modules install <module_name> --location <link or path>
+        ```
         """
         link_type = determine_type(location)
         return install_module(module, location, version, link_type, force=force, skip_check=skip_check)
 
     def uninstall(self, module: str, yes: bool = False):
         """
-        Method uninstalls specified module.
+        **Method uninstalls specified module.**
+        ```
         Usage:
             modules uninstall <module_name>
+        ```
         """
         return uninstall_module(module, force=yes)
 
     def create(self, module: str, name: str = None, author: str = None, version: str = None, systems: str = None, force: bool = False):
         """
-        Method creates empty module from template for development.
+        **Method creates empty module from template for development.**
+        ```
         Usage:
             modules create <module_name> --name ModuleName --author Author --version 1.0.0 --systems Linux,Windows,Darwin
+        ```
         """
         module_template = ""
         install_scenario_template = ""
@@ -201,9 +215,11 @@ class modulesHelper:
 
     def rendermd(self, module: str):
         """
-        Module renders README.md.
+        **Module renders README.md.**
+        ```
         Usage:
             modules rendermd <module_name>
+        ```
         """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
@@ -253,7 +269,7 @@ class modulesHelper:
                                 method_doc = method_object.__doc__
                                 if method_doc:
                                     method_doc = re.sub(r" \s+", "", method_doc).strip()
-                                methods_description.append(f"```\n{method_doc}\n```\n")
+                                methods_description.append(f"{method_doc}\n")
                                 class_methods = dir(method_object)
                                 for class_method in class_methods:
                                     class_method_object = getattr(method_object, class_method)
@@ -262,13 +278,13 @@ class modulesHelper:
                                         class_method_doc = class_method_object.__doc__
                                         if class_method_doc:
                                             class_method_doc = re.sub(r" \s+", "", class_method_doc).strip()
-                                        methods_description.append(f"```\n{class_method_doc}\n```\n")
+                                        methods_description.append(f"{class_method_doc}\n")
                             else:
                                 methods_description.append(f"### {method}\n")
                                 method_doc = method_object.__doc__
                                 if method_doc:
                                     method_doc = re.sub(r" \s+", "", method_doc).strip()
-                                methods_description.append(f"```\n{method_doc}\n```\n")
+                                methods_description.append(f"{method_doc}\n")
                     methods_description = '\n'.join(methods_description)
                     module_readme = Path(helper.__file__).parent / 'README.md'
                     with open(self.templates.get('documentation'), 'r', encoding='utf-8') as documentation_template_file:
@@ -285,9 +301,11 @@ class modulesHelper:
 
     def renderreq(self, module: str):
         """
-        Module renders requirements.txt.
+        **Module renders requirements.txt.**
+        ```
         Usage:
             modules renderreq <module_name>
+        ```
         """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
@@ -316,9 +334,11 @@ class modulesHelper:
 
     def renderhash(self, module: str):
         """
-        Method renders hash for each module file.
+        **Method renders hash for each module file.**
+        ```
         Usage:
             modules renderhash <module_name>
+        ```
         """
         def process_files(helper_path, directory, module, hash_list):
             for item in directory.iterdir():
@@ -359,7 +379,8 @@ class modulesHelper:
 
     def pack(self, *modules, location: str = None):
         """
-        Method prepare module and packs it to tar archive.
+        **Method prepare module and packs it to tar archive.**
+        ```
         Usage:
             1. To default pack location:
                 modules pack <module_name>
@@ -367,6 +388,7 @@ class modulesHelper:
                 modules pack <module_name> --location <location>
             3. To pack few modules:
                 modules pack <module1> <module2> --location <location>
+        ```
         """
         for module in modules:
             module_info = self.info(module, pretty=False)
@@ -384,10 +406,12 @@ class modulesHelper:
 
     def push(self, module: str):
         """
-        Method pushes module source code to it`s repo.
-        NOTE: Before using this method, configure your GitHub account to use SSH keys.
+        **Method pushes module source code to it`s repo.**
+        >NOTE: Before using this method, configure your GitHub account to use SSH keys.
+        ```
         Usage:
             modules push <module_name>
+        ```
         """
         module_info = self.info(module, pretty=False)
         if not module_info:
@@ -444,7 +468,7 @@ class modulesHelper:
 
     class update:
         """
-        Module to manipulate and check updates for modules.
+        **Module to manipulate and check updates for modules.**
         """
         def __init__(self, settings: dict = None, helpers: list = None):
             self.settings = settings
@@ -452,12 +476,14 @@ class modulesHelper:
 
         def changes(self, module: str = None):
             """
-            Method prints changelog for module.
+            **Method prints changelog for module.**
+            ```
             Usage:
                 1. With prompt to select available modules.
                     modules update changes
                 2. With specified module.
                     modules update changes --module <module_name>
+            ```
             """
             if not module:
                 module = print_choices([helper.__name__.split('.')[-1] for helper in self.helpers], exit_btn=True)
@@ -479,12 +505,14 @@ class modulesHelper:
 
         def check(self, module: str = None, pretty: bool = True):
             """
-            Method checks updates for modules or specified module.
+            **Method checks updates for modules or specified module.**
+            ```
             Usage:
                 1. Without specified module name:
                     modules update check
                 2. With specified module name:
                     modules update check --module module_name
+            ```
             """
             helpers = self.helpers.copy()
             helpers_for_update = []
@@ -521,12 +549,14 @@ class modulesHelper:
 
         def install(self, module: str = None, skip_check: bool = False):
             """
-            Method updates modules or specified module.
+            **Method updates modules or specified module.**
+            ```
             Usage:
                 1. Without specified module name:
                     modules update install
                 2. With specified module name:
                     modules update install --module module_name
+            ```
             """
             modules_for_update = self.check(pretty=False)
             if not modules_for_update:

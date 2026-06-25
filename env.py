@@ -12,7 +12,7 @@ from typing import Any, Optional
 
 __version__ = '1.1.0'
 __version_name__ = 'summer'
-__release__ = 'dev'
+__release__ = 'stable'
 __product_name__ = 'helper'
 __required_python__ = (3, 7)
 
@@ -106,7 +106,7 @@ RESET = Fore.RESET
 
 # Core #
 LOCALE, ENCODING = locale.getdefaultlocale()
-LOCALIZATION_DATA = get_localization(LOCALE, './locales')
+LOCALIZATION_DATA = get_localization(LOCALE, Path(__file__).parent / 'locales')
 IS_ADMIN = is_admin()
 SYSTEM_PLATFORM = platform.system()
 GITHUB_TOKEN = get_system_based_value(loader.get('core:remote', 'gh_api_token', ''))
