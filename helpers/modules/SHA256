@@ -1,7 +1,7 @@
-- ./requirements.txt: 49f0912178a47f4e104a4fb64bb459f7c91ab660feb3fb17fee77323fed7774d
+- ./requirements.txt: 595a2b35195a967d471662d201ea8410feb06ccc6acbf08bdaf353866243f8ac
 - ./templates/documentation.tmpl: 01721df5c79a588416c823eec6aafaf7e5dbf73a192dc3ac92e67a640cd49c53
-- ./templates/github-release.tmpl: 44bb86cba6027138586b23705519d820b270c7a8e2f6734f07e641fd65d7ebeb
-- ./templates/module.tmpl: 6c3a40eb634799b6f99b9b376fcaeedd1778c07fb8bcdb680ea0cd9b73d805c7
+- ./templates/github-release.tmpl: 018b2301d0ca81f3ee3f6297890e2e202155d847486596515bb5889bfde8fe03
+- ./templates/module.tmpl: 884dd6a33c7a149314199a3c9fbc12bbadde4e6fbe870656a2d3aad129e2fb87
 - ./templates/scenario.tmpl: 1a418c472884ee321cb8ec51c0663457ed7b7d2d5626b20f382d7d08e9e9fa92
-- ./utils.py: 3af58ea1e6a2368d0f4e4836353337e4a6f5082435a2fd787c29c35695668106
-- ./__init__.py: 47be510e32b13608f8c1f5d808b7ed6e8d121d4774324e3af5b1bd2b072dafe6
+- ./utils.py: 53455df08a14536b991892738bdc2ab34720ed6eb886cae1f52e695f5d567881
+- ./__init__.py: 28f907589085cb0acd454f52eb50c143e34419197bcf4f76a625d75ff30fece1

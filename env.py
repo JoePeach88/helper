@@ -10,9 +10,9 @@ from colorama import Fore
 from typing import Any, Optional
 
 
-__version__ = '1.1.0'
+__version__ = '1.2.0'
 __version_name__ = 'summer'
-__release__ = 'stable'
+__release__ = 'dev'
 __product_name__ = 'helper'
 __required_python__ = (3, 7)
 
@@ -33,7 +33,7 @@ def get_system_based_value(string: str, default: str = None, return_default: boo
         return default
     else:
         return string
-    
+
 
 def get_localization(locale_code: str, locales_path: str):
     locale_full_path = Path(f'{locales_path}/{locale_code}.yml')
@@ -106,20 +106,25 @@ RESET = Fore.RESET
 
 # Core #
 LOCALE, ENCODING = locale.getdefaultlocale()
-LOCALIZATION_DATA = get_localization(LOCALE, Path(__file__).parent / 'locales')
 IS_ADMIN = is_admin()
 SYSTEM_PLATFORM = platform.system()
+
+# Remote
 GITHUB_TOKEN = get_system_based_value(loader.get('core:remote', 'gh_api_token', ''))
 PIP_PROXY = get_system_based_value(loader.get('core:remote', 'pip_proxy', ''))
 PIP_BREAK_SYSTEM_PACKAGES = get_system_based_value(loader.get('core:remote', 'pip_break_system_packages', 'False')) == 'True'
-DEBUG = get_system_based_value(loader.get('core:logging', 'debug', 'False'))
-EMOJI_ENABLED = get_system_based_value(loader.get('core:logging', 'emoji_enabled', 'True')) == 'True'
+UPDATE_CHECK = get_system_based_value(loader.get('core:remote', 'update_check', 'False')) == 'True'
+
+# Optimization
 LESS_LINES = int(get_system_based_value(loader.get('core:optimization', 'less_lines', '20')))
 UNPACK_FILE_FILTER = get_system_based_value(loader.get('core:optimization', 'modules_filter', r'^.*.$'))
 HRDRM_ENABLED = get_system_based_value(loader.get('core:optimization', 'hrdrm_enabled', 'True')) == 'True'
 GC_ENABLED = get_system_based_value(loader.get('core:optimization', 'gc_enabled', 'True')) == 'True'
+MD_RETURN_OUTPUT = get_system_based_value(loader.get('core:optimization', 'md_return_output', 'False')) == 'True'
 
 # Logging
 LOGS_PATH = Path(get_system_based_value(loader.get('core:logging', 'logs_path', f'{Path(__file__).parent}/logs'))).absolute()
 LOGS_LEVELS = loader.get('core:logging', 'logs_levels', 'ERROR', split=True)
+DEBUG = get_system_based_value(loader.get('core:logging', 'debug', 'False')) == 'True'
+EMOJI_ENABLED = get_system_based_value(loader.get('core:logging', 'emoji_enabled', 'True')) == 'True'
 # End Core #

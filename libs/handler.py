@@ -3,27 +3,40 @@
 # helper CLI
 **The CLI which interpretates python modules as CLI commands.**
 
-```
 Usage:
-helper <module> <module_method> <module_args>
 
-Helpfull commands:
-helper version - to view information about helper cli version and it installed modules.
-helper debug - to view cli debug information.
-helper modules ls - to view all available modules.
-helper <module_name> man - to view manual for helper module.
-helper <module_name> help - to view help information for module, show all available methods and its aliases.
 ```
+helper <module> <module_method> <module_args>
+```
+
+## Helpfull commands:
+
+`helper howto` - to view helper development guide.
+
+`helper version` - to view information about helper cli version and it installed modules.
+
+`helper debug` - to view cli debug information.
+
+`helper modules ls` - to view all available modules.
+
+`helper <module_name> man` - to view manual for helper module.
+
+`helper <module_name> help` - to view help information for module, show all available methods and its aliases.
 """
 #  CLI DOCUMENTATION BLOCK END  #
 
 import re
 import inspect
 import sys
+import pyfiglet
 from pathlib import Path
 from difflib import get_close_matches
-from env import __release__, __version__, __version_name__, __product_name__, IS_ADMIN, SYSTEM_PLATFORM, LESS_LINES, LOGS_LEVELS, LOGS_PATH, PIP_PROXY, DEBUG, EMOJI_ENABLED, UNPACK_FILE_FILTER, HRDRM_ENABLED, PIP_BREAK_SYSTEM_PACKAGES, GC_ENABLED
-from helpers import _find_module, _find_settings, _prepare_helper, _find_disabled_module, list_helpers, Helper
+from env import (
+    __release__, __version__, __version_name__, __product_name__, IS_ADMIN, SYSTEM_PLATFORM, LESS_LINES, LOGS_LEVELS, LOGS_PATH,
+    PIP_PROXY, DEBUG, LOCALE, ENCODING, EMOJI_ENABLED, UNPACK_FILE_FILTER, HRDRM_ENABLED, PIP_BREAK_SYSTEM_PACKAGES, GC_ENABLED,
+    MD_RETURN_OUTPUT, UPDATE_CHECK
+)
+from helpers import _find_module, _find_settings, _prepare_helper, _find_disabled_module, list_helpers, Helper, HELPERS_DIR
 from libs.messages import print_message, render_md, less, WARNING, ERROR
 
 
@@ -31,17 +44,17 @@ def _get_attribute(obj, name, helper):
     try:
         return getattr(obj, name)
     except AttributeError:
-        print_message(f"Object {obj} has no method like '{name}'.", WARNING, True)
+        print_message(f"Object {obj} has no method like '{name}'.", WARNING)
         obj_methods = obj.__dir__()
         closest_matches = get_close_matches(name, [method for method in dir(obj.helper if 'helper' in obj_methods else obj) if not method.startswith('_')], n=3, cutoff=0.6)
         if closest_matches:
             matches = "\n\t".join(closest_matches)
             print(f"Method '{name}' not found, the most similar methods are:\n\t{matches}")
             if 'helper' in dir(obj):
-                print("\n\nAvailable manual:")
+                print("\n\nAvailable manual:\n")
                 _print_help(obj.helper, helper)
             elif 'helper' in dir(helper) or obj.__doc__:
-                print("\n\nAvailable manual:")
+                print("\n\nAvailable manual:\n")
                 _print_help(obj, helper)
         return None
 
@@ -54,7 +67,6 @@ def _print_help(obj, helper = None, full_output: bool = True):
         else:
             doc = obj
         if doc:
-            doc = doc.replace('\n/g', '\n')
             doc = render_md(doc)
             if full_output:
                 print(doc)
@@ -78,11 +90,11 @@ def _call_function(helper, function_name, function, args_list, aliases):
         return
 
     if function_name in helper.module.__module_disabled_methods__ or function is None or function_name.startswith('_'):
-        print_message(f"Helper {helper} has no method like '{function_name}'.", WARNING, True)
+        print_message(f"Helper {helper} has no method like '{function_name}'.", WARNING)
         _print_help(helper.helper, helper)
         return
 
-    if 'help' in args_list:
+    if 'help' in args_list or '--help' in args_list:
         _print_help(function, helper)
         return
 
@@ -112,6 +124,8 @@ def _call_function(helper, function_name, function, args_list, aliases):
         output = function(*args, **kwargs)
         if output:
             if isinstance(output, str):
+                if MD_RETURN_OUTPUT:
+                    output = render_md(output)
                 if full_output:
                     print(output)
                 else:
@@ -135,7 +149,7 @@ def _handle_non_callable(helper, function_name, obj, args_list, aliases):
             nested_name = alias
             break
 
-    if nested_name == 'help':
+    if nested_name == 'help' or nested_name == '--help':
         _print_help(obj, helper)
         return
 
@@ -173,6 +187,22 @@ def prepare_arguments(*args):
 
 
 def detect_handler(method, arguments):
+    if UPDATE_CHECK:
+        try:
+            print_message("Initiating builtin 'core' helper to check core updates.")
+            core_prepared = _prepare_helper('core')
+            core_module = _find_module('helpers.core')
+            core_settings = _find_settings('core')
+            core_helper = getattr(core_module, core_prepared)
+            core_helper = core_helper(core_settings)
+            print_message("Helper 'core' initiated.")
+        except Exception as e:
+            print_message(f"Helper 'core' cannot be initiated cause something went wrong: {e}.", ERROR)
+            return
+        updates = core_helper.update.check(pretty = False)
+        if updates:
+            print(render_md(f"> ℹ️ **INFO:** New helper version ({updates[0]['remote_version']}) available, install it via command below:\n\n```\nhelper core update install\n```"))
+            print()
     is_helper = _find_module(f'helpers.{method}')
     is_disabled = _find_disabled_module(f'helpers.{method}')
     if is_disabled:
@@ -181,11 +211,27 @@ def detect_handler(method, arguments):
     if is_helper:
         print_message(f"Found helper handler at {is_helper}.")
         helper_handler(method, arguments)
+    elif method in ['howto']:
+        with open(HELPERS_DIR / 'README.md', encoding='utf-8') as readme_file:
+            readme_content = render_md(readme_file.read())
+            if '--no-less' in arguments:
+                print(readme_content)
+            else:
+                less(readme_content)
     elif method in ['debug', '-d', '--debug']:
         debug_handler()
     elif method in ['version', '-v', '--version']:
         version_handler()
-    elif method in ['help'] or method is None:
+    elif method in ['changelog', 'changes']:
+        changelog = Path(__file__).parent.parent / 'CHANGELOG.md'
+        if changelog.exists():
+            with open(changelog, encoding='utf-8') as changelog_file:
+                changes_content = render_md(changelog_file.read())
+                if '--no-less' in arguments:
+                    print(changes_content)
+                else:
+                    less(changes_content)
+    elif method in ['help', '--help'] or method is None:
         if __doc__:
             _print_help(__doc__)
     else:
@@ -225,10 +271,10 @@ def prepare_doc(obj, helper = None):
             if not method.startswith('_') and not method in helper.module.__module_disabled_methods__ and (callable(method_object) or not isinstance(method_object, (list, str, dict, int, float, bool, tuple, set, type(helper.helper), type(None)))):
                 has_public_methods = True
                 alias = aliases.get(method, [])
-                formatted_methods.append(f"**{method}**\n>Aliases: {', '.join(alias)}\n")
+                formatted_methods.append(f"\n**{method}**\n> Aliases: {', '.join(alias)}\n---\n")
         if not has_public_methods:
             return
-        documentation += f'\n\nAvailable methods:\n\n{module_name} ' + f'\n{module_name} '.join(formatted_methods)
+        documentation += f'\n\n## Available methods:\n\n---\n{module_name} ' + f'\n{module_name} '.join(formatted_methods)
     return documentation if documentation else None
 
 
@@ -239,7 +285,7 @@ def helper_handler(helper_name, arguments):
     if defined_aliases:
         aliases.update(defined_aliases)
 
-    if not arguments or arguments[0] in ('help', '__init__', None):
+    if not arguments or arguments[0] in ('help', '__init__', None, '--help'):
         _print_help(helper.helper, helper)
         return
 
@@ -263,6 +309,7 @@ def version_handler():
     version_name = __version_name__
     release = __release__
     helpers = list_helpers()
+    print(pyfiglet.figlet_format(f"{__product_name__} CLI"))
     print(f'{__product_name__} INFO')
     print(f'CLI Version: {version} [{version_name}] ({release})')
     print(f'\nHelpers Modules:')
@@ -271,7 +318,6 @@ def version_handler():
 
 
 def debug_handler():
-    EMOJI_ENABLED = False
     try:
         print_message("Initiating builtin 'core' helper to retrieve modules settings.")
         core_prepared = _prepare_helper('core')
@@ -284,11 +330,16 @@ def debug_handler():
         print_message(f"Helper 'core' cannot be initiated cause something went wrong: {e}.", ERROR)
         return
 
+    selfcheck = core_helper.selfcheck()
+
     print('--------------------------\n')
     print('System Information:\n')
     print(f'System: {SYSTEM_PLATFORM}')
+    print(f'System locale: {LOCALE}')
+    print(f'System encoding: {ENCODING}')
     print("Python Version:", sys.version)
     print("Python Executable Path:", sys.executable)
+    print(selfcheck)
     print(f'Is admin: {IS_ADMIN}')
     print(f'Less lines: {LESS_LINES}')
     print(f'Log file logs levels: {LOGS_LEVELS}')

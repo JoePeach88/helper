@@ -2,9 +2,9 @@ import pandas as pd
 import glob
 import os
 from pathlib import Path
-from env import __version__, LOGS_PATH
-from helpers import print_message, print_choices, print_choice, render_code, INFO, WARNING, ERROR, loader, SYSTEM_PLATFORM, get_system_based_value
-from helpers.core.utils import install_update, retrieve_json
+from env import __version__, __release__, LOGS_PATH
+from helpers import print_message, print_choices, print_choice, render_code, INFO, WARNING, ERROR, loader, SYSTEM_PLATFORM, get_system_based_value, spinning_loader
+from helpers.core.utils import install_update, retrieve_json, test_github_connection
 from helpers.modules.utils import github_url_to_releases_api
 
 
@@ -17,7 +17,7 @@ __module_link__ = None
 __module_category__ = ['builtin', 'core']
 __module_compatibility__ = ['all']
 __module_dependencies__ = []
-__module_status__ = 'stable'
+__module_status__ = __release__
 __methods_static_aliases__ = {}
 
 
@@ -32,6 +32,19 @@ class coreHelper:
         self.config = self.config(dict(loader.config), settings.get('core:config', {}))
         self.update = self.update(settings.get('core:update', {}))
         self.logs = self.logs(settings.get('core:logging', {}))
+
+    def selfcheck(self, pretty: bool = True):
+        """
+        **Method checks that all required parameters set for correct work.**
+        ```
+        Usage:
+            core selfcheck
+        ```
+        """
+        config = self.config
+        github_connection_status, user = test_github_connection()
+        gh_token = True if config.get('core:remote', 'gh_api_token') else False
+        return f"GitHub connection status: {f'Established. Authenticated as {user}.' if github_connection_status else 'Not connected'}\nGitHub token set: {'Yes' if gh_token else 'No'}" if pretty else {'github_connection_status': github_connection_status, 'gh_token_set': gh_token}
 
     class config:
         """

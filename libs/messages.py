@@ -2,6 +2,7 @@ import os
 import inspect
 import traceback
 import sys
+import time
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.syntax import Syntax
@@ -96,7 +97,7 @@ def print_message(message: str, message_level: str = INFO, force: bool = False, 
             log_file.write(f'{log_message}\n')
     
     if not debug:
-        if DEBUG == 'True':
+        if DEBUG:
             print(f'{color}{formatted_message}{RESET}')
         elif force:
             if EMOJI_ENABLED:
@@ -105,6 +106,22 @@ def print_message(message: str, message_level: str = INFO, force: bool = False, 
                 print(f'{color}[{message_level}] {message}{RESET}')
     else:
         print(f'{color}{formatted_message}{RESET}')
+
+
+def spinning_loader(stop_event = None, message: str = "Loading, please wait..."):
+    if not DEBUG:
+        symbols = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        while not stop_event.is_set():
+            for symbol in symbols:
+                if stop_event.is_set():
+                    break
+                sys.stdout.write(f"\r{message} {symbol} ")
+                sys.stdout.flush()
+                time.sleep(0.08)
+        sys.stdout.write('\x1b[1A')
+        sys.stdout.write('\x1b[2K')
+        sys.stdout.write('\r')
+        sys.stdout.flush()
 
 
 def less(string: str):
@@ -122,6 +139,11 @@ def less(string: str):
             full_chars = input_char
         full_chars = full_chars.lower()
         return full_chars in [b'\r', '\n'], full_chars in [b':e', ':e']
+
+    # Check that string is file path
+    if Path(string).exists():
+        with open(string, 'r', encoding='utf-8') as file:
+            string = file.read()
 
     string_lines = string.split('\n')
     count = 0

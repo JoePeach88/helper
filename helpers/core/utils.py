@@ -3,6 +3,8 @@ import os
 import tempfile
 import tarfile
 import shutil
+import re
+import subprocess
 from helpers import print_message, print_choice, WARNING, ERROR, install_requirements
 from pathlib import Path
 from tqdm import tqdm
@@ -63,6 +65,16 @@ def github_url_to_releases_api(github_url: str):
     api_url = f"https://api.github.com/repos/{owner}/{repo}/releases"
     
     return api_url
+
+
+def test_github_connection():
+    github_ssh = 'git@github.com'
+    pattern = r'^Hi (\w+)! You\'ve successfully authenticated, but GitHub does not provide shell access\.$'
+    result = subprocess.run(["ssh", "-T", github_ssh], capture_output=True, text=True)
+    result = result.stderr.strip()
+    print_message(f"Returned output: '{result}', checking is it match pattern '{pattern}'.")
+    match = re.match(pattern, result)
+    return match is not None, match.group(1)
 
 
 def retrieve_json(url: str):

@@ -11,7 +11,7 @@ HELPERS_DIR = Path(__file__).resolve().parent
 HELPERS_PARENT_DIR = HELPERS_DIR.parent
 if str(HELPERS_PARENT_DIR) not in sys.path:
     sys.path.insert(0, str(HELPERS_PARENT_DIR))
-from libs.messages import print_message, print_choices, print_choice, render_code, render_md, WARNING, ERROR, SUCCESS, INFO
+from libs.messages import print_message, print_choices, print_choice, render_code, render_md, spinning_loader, WARNING, ERROR, SUCCESS, INFO
 
 
 def install_requirements(module_name: str, requirements_file: str):

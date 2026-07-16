@@ -13,6 +13,7 @@
 - [ls](#ls)
 - [rm](#rm)
 - [view](#view)
+- [selfcheck](#selfcheck)
 - [**update**](#update) [module]
 - [check](#check)
 - [install](#install)
@@ -27,7 +28,7 @@ helper modules install core --location None
 
 **Author: [JoePeach88](https://github.com/JoePeach88)**
 
-**Version: 1.1.0**
+**Version: 1.2.0**
 
 **Supported platforms:**
 
@@ -102,6 +103,14 @@ core logs rm
 ```
 Usage:
 core logs view <log>
+```
+
+### selfcheck
+
+**Method checks that all required parameters set for correct work.**
+```
+Usage:
+core selfcheck
 ```
 
 ## update

@@ -141,10 +141,6 @@ EOF
     commands.extend(['\techo "Structure prepared."\n', '\techo "Installing dependencies..."\n'])
     for requirement in requirements:
         commands.append(f"\tpip install -r $location/{requirement.as_posix()} --break-system-packages")
-        if pip_ignore_unix:
-            commands.append(f" --exclude {' '.join(pip_ignore_unix)} 2>> install.log\n")
-        else:
-            commands.append(' 2>> install.log\n')
         commands.append(exit_code_check('Unix'))
     commands.extend([
         "\tif [ $exit_code -ne 0 ]; then\n",

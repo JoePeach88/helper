@@ -2,13 +2,15 @@ import pandas as pd
 import os
 import re
 import yaml
+import glob
+import tempfile
 from git import Repo
 from rich.console import Console
 from rich.markdown import Markdown
 from pipreqs import pipreqs
-from helpers.modules.utils import github_url_to_releases_api, github_repo_to_ssh, retrieve_json, install_module, uninstall_module, determine_type, pack_module, get_file_sha256, get_dir_size, format_bytes
+from helpers.modules.utils import github_url_to_releases_api, github_repo_to_ssh, test_github_connection, retrieve_json, install_module, uninstall_module, determine_type, pack_module, get_file_sha256, get_dir_size, format_bytes
 from helpers import print_message, print_choices, _load_modules_from_directory, HELPERS_DIR, INFO, WARNING, ERROR, SYSTEM_PLATFORM
-from env import loader, PIP_PROXY, __version__
+from env import loader, PIP_PROXY, __version__, __release__
 from pathlib import Path
 
 
@@ -21,7 +23,7 @@ __module_link__ = None
 __module_category__ = ['builtin', 'core']
 __module_compatibility__ = ['all']
 __module_dependencies__ = [{}]
-__module_status__ = 'stable'
+__module_status__ = __release__
 __methods_static_aliases__ = {
     'ls': ['ll', 'list'],
     'info': ['nfo'],
@@ -35,7 +37,9 @@ __methods_static_aliases__ = {
     'rendermd': ['md', 'markdown'],
     'renderreq': ['reqs', 'req'],
     'renderhash': ['hash'],
-    'pack': ['zip']
+    'pack': ['zip'],
+    'push': ['publish'],
+    'rendertemplate': ['template']
 }
 
 
@@ -46,12 +50,7 @@ class modulesHelper:
     def __init__(self, settings: dict):
         self.settings = settings
         not_silent = True
-        self.templates = {
-            'documentation': Path(__file__).parent / 'templates/documentation.tmpl',
-            'module': Path(__file__).parent / 'templates/module.tmpl',
-            'scenario': Path(__file__).parent / 'templates/scenario.tmpl',
-            'github_release': Path(__file__).parent / 'templates/github-release.tmpl',
-        }
+        self.templates = {Path(file).stem: file for file in glob.glob(os.path.join(Path(Path(__file__).parent / 'templates'), "*.tmpl"))}
         if self.settings.get('modules:module', {}).get('silent_load', 'True') == 'True':
             not_silent = False
             print_message("Loading modules silently to retrieve it information.")
@@ -114,6 +113,8 @@ class modulesHelper:
             modules disable --module <module_name>
         ```
         """
+        if module in ['core', 'modules']:
+            return f"Module '{module}' is builtin."
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         for helper in all_helpers:
@@ -130,6 +131,8 @@ class modulesHelper:
             modules enable --module <module_name>
         ```
         """
+        if module in ['core', 'modules']:
+            return f"Module '{module}' is builtin."
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         for helper in all_helpers:
@@ -146,8 +149,11 @@ class modulesHelper:
             modules install <module_name> --location <link or path>
         ```
         """
-        link_type = determine_type(location)
-        return install_module(module, location, version, link_type, force=force, skip_check=skip_check)
+        if module not in ['core', 'modules']:
+            link_type = determine_type(location)
+            return install_module(module, location, version, link_type, force=force, skip_check=skip_check)
+        else:
+            return f"Module '{module}' is builtin."
 
     def uninstall(self, module: str, yes: bool = False):
         """
@@ -157,7 +163,10 @@ class modulesHelper:
             modules uninstall <module_name>
         ```
         """
-        return uninstall_module(module, force=yes)
+        if module not in ['core', 'modules']:
+            return uninstall_module(module, force=yes)
+        else:
+            return f"Module '{module}' is builtin."
 
     def create(self, module: str, name: str = None, author: str = None, version: str = None, systems: str = None, force: bool = False):
         """
@@ -167,22 +176,8 @@ class modulesHelper:
             modules create <module_name> --name ModuleName --author Author --version 1.0.0 --systems Linux,Windows,Darwin
         ```
         """
-        module_template = ""
-        install_scenario_template = ""
-        uninstall_scenario_template = ""
-        release_template = ""
-        with open(self.templates.get('module'), 'r', encoding='utf-8') as module_template_file:
-            module_template = module_template_file.read()
-        with open(self.templates.get('scenario'), 'r', encoding='utf-8') as install_scenario_template_file:
-            install_scenario_template = install_scenario_template_file.read()
-        with open(self.templates.get('scenario'), 'r', encoding='utf-8') as uninstall_scenario_template_file:
-            uninstall_scenario_template = uninstall_scenario_template_file.read()
-        with open(self.templates.get('github_release'), 'r', encoding='utf-8') as release_template_file:
-            release_template = release_template_file.read()
-        if module_template:
-            module_template = module_template.format(module = module, name = name, author = author, version = version, systems = ", ".join(f"'{system}'" for system in systems.split(",")))
-        if release_template:
-            release_template = release_template.format(module = module)
+        if module in ['core', 'modules']:
+            return f"Module '{module}' is builtin."
         module_path = Path(f"{HELPERS_DIR}/{module}").absolute()
         github_path = Path(f"{HELPERS_DIR}/{module}/.github/workflows").absolute()
         init_path= Path(f"{module_path}/__init__.py").absolute()
@@ -195,23 +190,43 @@ class modulesHelper:
             os.remove(init_path)
             os.remove(install_scenario_path)
             os.remove(uninstall_scenario_path)
-
-        if not release_path.exists():
-            with open(release_path, 'x', newline="\n", encoding='utf-8') as release_file:
-                release_file.write(release_template)
-
-        if not install_scenario_path.exists():
-            with open(install_scenario_path, 'x', newline="\n", encoding='utf-8') as install_scenario_file:
-                install_scenario_file.write(install_scenario_template)
-        if not uninstall_scenario_path.exists():
-            with open(uninstall_scenario_path, 'x', newline="\n", encoding='utf-8') as uninstall_scenario_file:
-                uninstall_scenario_file.write(uninstall_scenario_template)
-        if not init_path.exists():
-            with open(init_path, 'x', newline="\n", encoding='utf-8') as module_file:
-                module_file.write(module_template)
+        self.rendertemplate('github-release', release_path, pretty = False, module = module)
+        self.rendertemplate('scenario', install_scenario_path, pretty = False)
+        self.rendertemplate('scenario', uninstall_scenario_path, pretty = False)
+        if self.rendertemplate('module', init_path, force = force, pretty = False, module = module, name = name, author = author, version = version, systems = ", ".join(f"'{system}'" for system in systems.split(","))):
             return f"Module '{module}' created."
         else:
             return f"Module '{module}' already exists."
+
+    def rendertemplate(self, template: str, file: str, force: bool = False, pretty: bool = True, **kwargs):
+        """
+        **Method renders template from templates path.**
+        ```
+        Usage:
+            modules rendertemplate <template> <file_to_save>
+        ```
+        """
+        template_path = self.templates.get(template)
+
+        if not template_path or not Path(template_path).exists():
+            return f"Template '{template}' not exists." if pretty else False
+
+        with open(template_path, 'r', encoding='utf-8') as template_file:
+            template_data = template_file.read()
+
+        if not template_data:
+            return f"Template '{template}' has no data." if pretty else False
+
+        template_data = template_data.format(**kwargs)
+        file_path = Path(file)
+
+        if force or not file_path.exists():
+            mode = 'x' if not file_path.exists() else 'w'
+            with open(file_path, mode, newline="\n", encoding='utf-8') as output_file:
+                output_file.write(template_data)
+            return f"Template '{template}' rendered to '{file_path}'." if pretty else True
+
+        return f"Template '{template}' not rendered." if pretty else False
 
     def rendermd(self, module: str):
         """
@@ -391,6 +406,8 @@ class modulesHelper:
         ```
         """
         for module in modules:
+            if module in ['core', 'modules']:
+                return f"Module '{module}' is builtin."
             module_info = self.info(module, pretty=False)
             if module_info:
                 module_version = module_info['version']
@@ -413,14 +430,22 @@ class modulesHelper:
             modules push <module_name>
         ```
         """
+        if module in ['core', 'modules']:
+            return f"Module '{module}' is builtin."
         module_info = self.info(module, pretty=False)
         if not module_info:
             return
 
+        module_author = module_info['author']
         module_version = module_info['version']
         module_link = module_info['link']
         module_path = module_info['path']
-        
+
+        connection_test, user = test_github_connection()
+
+        if not connection_test:
+            return "Seems like your GitHub account not configured to use SSH keys."
+
         if module_link and module_path:
             print_message("Rendering module requirements, please wait...", force=True)
             self.renderreq(module)

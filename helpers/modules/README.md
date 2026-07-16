@@ -15,6 +15,7 @@
 - [renderhash](#renderhash)
 - [rendermd](#rendermd)
 - [renderreq](#renderreq)
+- [rendertemplate](#rendertemplate)
 - [uninstall](#uninstall)
 - [**update**](#update) [module]
 - [changes](#changes)
@@ -31,7 +32,7 @@ helper modules install modules --location None
 
 **Author: [JoePeach88](https://github.com/JoePeach88)**
 
-**Version: 1.1.0**
+**Version: 1.2.0**
 
 **Supported platforms:**
 
@@ -133,6 +134,14 @@ modules rendermd <module_name>
 ```
 Usage:
 modules renderreq <module_name>
+```
+
+### rendertemplate
+
+**Method renders template from templates path.**
+```
+Usage:
+modules rendertemplate <template> <file_to_save>
 ```
 
 ### uninstall

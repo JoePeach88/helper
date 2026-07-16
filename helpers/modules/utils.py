@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 from env import UNPACK_FILE_FILTER
 from helpers import print_message, print_choice, WARNING, ERROR, HELPERS_DIR, install_requirements, get_system_based_value
-from helpers.core.utils import download_file, retrieve_json, github_url_to_releases_api, github_repo_to_ssh
+from helpers.core.utils import download_file, retrieve_json, github_url_to_releases_api, github_repo_to_ssh, test_github_connection
 
 
 def _run_commands(commands, phase, command_kind, scenario_type):
@@ -180,7 +180,7 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
                 print_message(f"File 'SHA256' not found or some file has incorrect sha256 sum, it means module can be infected, removing it...", WARNING, force=True)
                 uninstall_module(module_name, force=True)
                 print_message(f"If you want to install module without checking sha256 sum, you need to install module with --skip-check flag.", WARNING, force=True)
-                return
+                return f"Module '{module_name}' not installed."
         if helper_changelog:
             with open(changelog_path, 'w' if changelog_path.exists() else 'x', newline="\n", encoding='utf-8') as changelog_file:
                 changelog_file.write(helper_changelog)

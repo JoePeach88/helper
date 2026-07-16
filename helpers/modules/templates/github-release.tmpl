@@ -19,7 +19,7 @@ jobs:
       - name: "[Step 2 Check Release Type]"
         id: check_type
         run: |
-          if [[ "${{ github.ref_name }}" == *"-dev"* ]]; then
+          if [[ "${{{{ github.ref_name }}}}" == *"-dev"* ]]; then
             echo "is_prerelease=true" >> $GITHUB_OUTPUT
           else
             echo "is_prerelease=false" >> $GITHUB_OUTPUT
