@@ -356,7 +356,7 @@ class modulesHelper:
         """
         def process_files(helper_path, directory, module, hash_list):
             for item in directory.iterdir():
-                if item.name in ['.git', '.github']:
+                if item.name in ['.git', '.github', 'tests']:
                     continue
                 if item.is_dir():
                     process_files(helper_path, item, module, hash_list)
@@ -366,14 +366,14 @@ class modulesHelper:
                     
                     if file_name in ['SHA256', 'CHANGELOG.md', 'README.md']:
                         continue
-                    
+
                     file_parent = f'{relative_path.as_posix()}'
 
                     if file_parent == '.':
                         full_path = f"{file_parent}/{file_name}"
                     else:
                         full_path = f"./{file_parent}/{file_name}"
-                    
+
                     hash_obj = {full_path: get_file_sha256(item)}
                     hash_list.append(hash_obj)
             return hash_list
