@@ -1,4 +1,4 @@
-- ./requirements.txt: c3b05d64630e55aeb954c064926914fd70ba26f1de7de0d4e4514d5320e3e323
+- ./requirements.txt: 87d0362233e9e3e2a99ef45b3e79ba8bc657c17820a6cebc16701ce7ade46492
 - ./templates/documentation.tmpl: 01721df5c79a588416c823eec6aafaf7e5dbf73a192dc3ac92e67a640cd49c53
 - ./templates/github-release.tmpl: 018b2301d0ca81f3ee3f6297890e2e202155d847486596515bb5889bfde8fe03
 - ./templates/module.tmpl: 856aedc6b8912447dd05fc04d82013edb74e269b984204209ced45d29d2d3dd0

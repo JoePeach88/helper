@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys
 sys.dont_write_bytecode = True
 
@@ -11,7 +11,6 @@ env.EMOJI_ENABLED = False
 import base64
 from pipreqs import pipreqs
 from pathlib import Path
-from helpers import list_helpers
 from libs.messages import print_message
 from env import __product_name__, __version__, __version_name__
 from helpers.modules import modulesHelper
