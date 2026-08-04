@@ -1,4 +1,4 @@
-GitPython==3.1.57
+GitPython==3.1.58
 pandas==3.0.5
 pipreqs==0.5.0
 pytest==9.1.1
