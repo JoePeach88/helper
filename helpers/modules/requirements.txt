@@ -1,5 +1,7 @@
-GitPython==3.1.52
-pandas==3.0.3
+GitPython==3.1.57
+pandas==3.0.5
 pipreqs==0.5.0
+pytest==9.1.1
+pytest_html==4.2.0
 PyYAML==6.0.3
 rich==15.0.0

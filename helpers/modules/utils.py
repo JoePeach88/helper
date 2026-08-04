@@ -6,7 +6,6 @@ import tempfile
 import hashlib
 import math
 import yaml
-import glob
 import subprocess
 import sys
 from urllib.parse import urlparse

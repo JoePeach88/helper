@@ -17,6 +17,8 @@ helper <module> <module_method> <module_args>
 
 `helper debug` - to view cli debug information.
 
+`helper core selfcheck` - to check that all setup correctly.
+
 `helper modules ls` - to view all available modules.
 
 `helper <module_name> man` - to view manual for helper module.
@@ -271,7 +273,11 @@ def prepare_doc(obj, helper = None):
             if not method.startswith('_') and not method in helper.module.__module_disabled_methods__ and (callable(method_object) or not isinstance(method_object, (list, str, dict, int, float, bool, tuple, set, type(helper.helper), type(None)))):
                 has_public_methods = True
                 alias = aliases.get(method, [])
-                formatted_methods.append(f"\n**{method}**\n> Aliases: {', '.join(alias)}\n---\n")
+                from types import MethodType
+                if isinstance(method_object, MethodType):
+                    formatted_methods.append(f"\n**{method}**\n> Aliases: {', '.join(alias)}\n---\n")
+                else:
+                    formatted_methods.append(f"\n**{method}** [module]\n> Aliases: {', '.join(alias)}\n---\n")
         if not has_public_methods:
             return
         documentation += f'\n\n## Available methods:\n\n---\n{module_name} ' + f'\n{module_name} '.join(formatted_methods)

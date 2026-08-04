@@ -173,7 +173,7 @@ def make_installer(structure: list, requirements: list, system: str = 'Unix'):
 
 if __name__ == '__main__':
     modules_helper = modulesHelper({})
-    pipreqs_args = {'--encoding': 'utf-8', '--ignore': '.venv', '<path>': '.', '--force': True, '--savepath': None, '--print': None, 
+    pipreqs_args = {'--encoding': 'utf-8', '--ignore': '.venv,helpers', '<path>': '.', '--force': True, '--savepath': None, '--print': None, 
                     '--pypi-server': None, '--proxy': None, '--use-local': None, '--diff': None, '--clean': None, '--mode': None}
     pipreqs_obj = pipreqs
     pipreqs_obj.logging.disable()
@@ -182,6 +182,9 @@ if __name__ == '__main__':
     reqs_lines = []
     with open(Path('./requirements.txt'), 'r', encoding='utf-8') as reqs_file:
         reqs_lines = reqs_file.readlines()
+        for line in reqs_lines:
+            if 'helpers' in line:
+                reqs_lines.remove(line)
     with open(Path('./requirements.txt'), 'w', newline="\n", encoding='utf-8') as reqs_file:
         reqs_file.writelines(reqs_lines)
     

@@ -3,7 +3,7 @@ import glob
 import os
 from pathlib import Path
 from env import __version__, __release__, LOGS_PATH
-from helpers import print_message, print_choices, print_choice, render_code, INFO, WARNING, ERROR, loader, SYSTEM_PLATFORM, get_system_based_value, spinning_loader
+from helpers import mask, print_message, print_choices, print_choice, render_code, INFO, WARNING, ERROR, loader, SYSTEM_PLATFORM, get_system_based_value, spinning_loader
 from helpers.core.utils import install_update, retrieve_json, test_github_connection
 from helpers.modules.utils import github_url_to_releases_api
 

@@ -3,13 +3,14 @@ import os
 import re
 import yaml
 import glob
-import tempfile
+import pytest
+import pytest_html
 from git import Repo
 from rich.console import Console
 from rich.markdown import Markdown
 from pipreqs import pipreqs
 from helpers.modules.utils import github_url_to_releases_api, github_repo_to_ssh, test_github_connection, retrieve_json, install_module, uninstall_module, determine_type, pack_module, get_file_sha256, get_dir_size, format_bytes
-from helpers import print_message, print_choices, _load_modules_from_directory, HELPERS_DIR, INFO, WARNING, ERROR, SYSTEM_PLATFORM
+from helpers import mask, print_message, print_choices, _load_modules_from_directory, HELPERS_DIR, INFO, WARNING, ERROR, SYSTEM_PLATFORM
 from env import loader, PIP_PROXY, __version__, __release__
 from pathlib import Path
 
@@ -113,14 +114,14 @@ class modulesHelper:
             modules disable --module <module_name>
         ```
         """
-        if module in ['core', 'modules']:
-            return f"Module '{module}' is builtin."
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         for helper in all_helpers:
-            if helper.__name__.split('.')[-1] == module:
+            if helper.__name__.split('.')[-1] == module and not (helper.__name__.split('.')[-1] in ['core', 'modules'] or ('core' in helper.__module_category__ or 'builtin' in helper.__module_category__)):
                 loader.set(module, 'enabled', 'False')
                 return f"Module '{module}' disabled."
+            else:
+                return f"Module '{module}' is builtin."
         return f"Module '{module}' not found."
 
     def enable(self, module: str):
@@ -131,12 +132,10 @@ class modulesHelper:
             modules enable --module <module_name>
         ```
         """
-        if module in ['core', 'modules']:
-            return f"Module '{module}' is builtin."
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         for helper in all_helpers:
-            if helper.__name__.split('.')[-1] == module:
+            if helper.__name__.split('.')[-1] == module and not (helper.__name__.split('.')[-1] in ['core', 'modules'] or ('core' in helper.__module_category__ or 'builtin' in helper.__module_category__)):
                 loader.set(module, 'enabled', 'True')
                 return f"Module '{module}' enabled."
         return f"Module '{module}' not found."
@@ -203,7 +202,7 @@ class modulesHelper:
         **Method renders template from templates path.**
         ```
         Usage:
-            modules rendertemplate <template> <file_to_save>
+            modules rendertemplate <template> <file> <args>
         ```
         """
         template_path = self.templates.get(template)
@@ -312,7 +311,7 @@ class modulesHelper:
                         return 'Documentation template not exists, aborting md creation.'
                     with open(module_readme, 'w' if module_readme.exists() else 'x', newline="\n", encoding='utf-8') as module_readme_file:
                         module_readme_file.write(documentation)
-                    print_message(f"README.md successfully rendered to '{module_readme.absolute()}'.", force=True)
+                    return f"README.md successfully rendered to '{module_readme.absolute()}'."
 
     def renderreq(self, module: str):
         """
@@ -343,9 +342,9 @@ class modulesHelper:
                         reqs_file.writelines(reqs_lines)
                     if not reqs_lines:
                         os.remove(reqs)
-                        print_message(f"requirements.txt for module '{module}' not rendered cause output from pipreqs is empty.", force=True)
+                        print_message(f"requirements.txt for module '{module}' not rendered cause output from pipreqs is empty.", WARNING, force=True)
                     else:
-                        print_message(f"requirements.txt successfully rendered for module '{module}' and saved to '{reqs}'.", force=True)
+                        return f"requirements.txt successfully rendered for module '{module}' and saved to '{reqs}'."
 
     def renderhash(self, module: str):
         """
@@ -390,7 +389,47 @@ class modulesHelper:
                     hash_list_file = helper_path / 'SHA256'
                     with open(hash_list_file, 'w' if hash_list_file.exists() else 'x', newline="\n", encoding='utf-8') as f:
                         f.write(yaml.dump(hash_list))
-                    print_message(f"SHA256 hash table successfully rendered to '{hash_list_file.absolute()}'.", force=True)
+                    return f"SHA256 hash table successfully rendered to '{hash_list_file.absolute()}'."
+
+    def rendertests(self, module: str):
+        """
+        **Method renders tests from template for specified module.**
+        ```
+        Usage:
+            modules rendertests <module>
+        ```
+        """
+        all_helpers = self.helpers
+        all_helpers.extend(self.disabled_helpers)
+        if module:
+            for helper in all_helpers:
+                if helper.__name__.split('.')[-1] == module:
+                    tests_path = Path(f"{HELPERS_DIR}/{module}/tests").absolute()
+                    os.makedirs(tests_path, mode=0o750, exist_ok=True)
+                    obj = getattr(helper, f"{module}Helper")
+                    disabled_methods = helper.__module_disabled_methods__
+                    methods = dir(obj)
+
+                    # Creating methods list
+                    methods_list = []
+                    for method in methods:
+                        if method in disabled_methods:
+                            continue
+                        method_object = getattr(obj, method)
+                        if not method.startswith('_') and (callable(method_object) or not isinstance(method_object, (list, str, dict, int, float, bool, tuple, set, type(helper.helper), type(None)))):
+                            # determine class method
+                            if (not callable(method_object) or isinstance(method_object, type)) and not isinstance(method_object, str):
+                                class_methods = dir(method_object)
+                                for class_method in class_methods:
+                                    class_method_object = getattr(method_object, class_method)
+                                    if not class_method.startswith('_') and (callable(class_method_object) or not isinstance(method_object, (list, str, dict, int, float, bool, tuple, set, type(helper.helper), type(None)))):
+                                        methods_list.append(f'{method}.{class_method}')
+                            else:
+                                methods_list.append(method)
+                    for method in methods_list:
+                        function_name = re.match(r'^(?:.*\.)?(\w+)$', method).group(1)
+                        self.rendertemplate('test', Path(f'{tests_path}/test_{function_name}.py'), force=True, module=module, function_name=function_name, function=method)
+                    return f"Tests for module '{module}' rendered successfully."
 
     def pack(self, *modules, location: str = None):
         """
@@ -491,6 +530,51 @@ class modulesHelper:
                 else:
                     print_message(f'Something went wrong when trying to push module’s contents: {e}.', ERROR)
 
+    def test(self, module: str, verbose: bool = False, report: bool = False, **kwargs):
+        """
+        **Method runs tests for specified module.**
+        ```
+        Usage:
+            1. Only test, without reports:
+                modules test <module>
+            2. Test with reports rendering:
+                module test <module> --report
+        ```
+        """
+        tests = {Path(file): file for file in glob.glob(os.path.join(Path(Path(HELPERS_DIR) / f'{module}/tests'), "*.py"))}
+        reports = []
+        reports_path = Path(HELPERS_DIR) / f'{module}/tests/reports'
+        summary_report = Path(HELPERS_DIR) / f'{module}/tests/reports/summary.html'
+        table_content = ['      <tbody>',]
+        for test in tests:
+            pytest_args = [test]
+            if report:
+                os.makedirs(reports_path, mode=0o750, exist_ok=True)
+                pytest_args.append(f"--html={Path(HELPERS_DIR) / f'{module}/tests/reports/{test.stem}.html'}")
+            pytest_args.append('-vv' if verbose else '-q')
+            for kwarg_name, kwarg_value in kwargs.items():
+                pytest_args.append(f'-{kwarg_name} {kwarg_value}' if not isinstance(kwarg_value, bool) else f'--{kwarg_name}')
+            print_message(f"Running test file '{test}'...")
+            test_result = pytest.main(pytest_args, ['no:cacheprovider'])
+            reports.append({
+                'name': test.stem,
+                'result': test_result
+            })
+        if report:
+            for report_data in reports:
+                status = "Passed" if report_data["result"] == 0 else "Failed"
+                color = "green" if report_data["result"] == 0 else "red"
+                table_content.append('        <tr>')
+                table_content.append(f"          <td>{report_data['name']}</td>")
+                table_content.append(
+                    f'<td style="color: {color};">{status}</td>'
+                )
+                table_content.append(f"          <td><a href=\"{reports_path / report_data['name']}.html\">{report_data['name']}</a></td>")
+                table_content.append('        </tr>')
+            table_content.append('      </tbody>')
+            self.rendertemplate('report', summary_report, force=True, table_content='\n'.join(table_content))
+            return f"Summary report rendered to '{summary_report}'."
+
     class update:
         """
         **Module to manipulate and check updates for modules.**
@@ -585,8 +669,7 @@ class modulesHelper:
             """
             modules_for_update = self.check(pretty=False)
             if not modules_for_update:
-                print_message("Nothing to install.", force=True)
-                return
+                return "Nothing to install."
             if not module:
                 if modules_for_update:
                     selected_for_install = print_choices([module_data['name'] for module_data in modules_for_update], multiple_choice=True, all_btn=True, exit_btn=True)
@@ -605,5 +688,5 @@ class modulesHelper:
                     for module_data in modules_for_update:
                         if module == module_data['name']:
                             return install_module(module, module_data['remote_download_link'], skip_check=skip_check)
-                    print_message(f"Module '{module}' is up-to-date.", force=True)
-                    return
+                    return f"Module '{module}' is up-to-date."
+

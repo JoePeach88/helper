@@ -16,6 +16,8 @@
 - [rendermd](#rendermd)
 - [renderreq](#renderreq)
 - [rendertemplate](#rendertemplate)
+- [rendertests](#rendertests)
+- [test](#test)
 - [uninstall](#uninstall)
 - [**update**](#update) [module]
 - [changes](#changes)
@@ -141,7 +143,26 @@ modules renderreq <module_name>
 **Method renders template from templates path.**
 ```
 Usage:
-modules rendertemplate <template> <file_to_save>
+modules rendertemplate <template> <file> <args>
+```
+
+### rendertests
+
+**Method renders tests from template for specified module.**
+```
+Usage:
+modules rendertests <module>
+```
+
+### test
+
+**Method runs tests for specified module.**
+```
+Usage:
+1. Only test, without reports:
+modules test <module>
+2. Test with reports rendering:
+module test <module> --report
 ```
 
 ### uninstall

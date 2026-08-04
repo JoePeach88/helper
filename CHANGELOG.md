@@ -8,6 +8,8 @@
 ### Modules module
 
 * Added new method `rendertemplate`
+* Added new method `rendertests`
+* Added new method `test`
 
 ### Core module
 

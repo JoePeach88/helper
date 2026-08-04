@@ -11,7 +11,7 @@ HELPERS_DIR = Path(__file__).resolve().parent
 HELPERS_PARENT_DIR = HELPERS_DIR.parent
 if str(HELPERS_PARENT_DIR) not in sys.path:
     sys.path.insert(0, str(HELPERS_PARENT_DIR))
-from libs.messages import print_message, print_choices, print_choice, render_code, render_md, spinning_loader, WARNING, ERROR, SUCCESS, INFO
+from libs.messages import mask, print_message, print_choices, print_choice, render_code, render_md, spinning_loader, WARNING, ERROR, SUCCESS, INFO
 
 
 def install_requirements(module_name: str, requirements_file: str):
@@ -225,6 +225,14 @@ class Helper:
             with open(reqs, encoding='utf-8') as reqs_file:
                 return f"Module '{helper_name}' requirements:\n{reqs_file.read().strip()}"
         return f"Module '{helper_name}' has no available requirements."
+
+    def changes(self):
+        changelog = Path(self.module.__file__).parent / 'CHANGELOG.md'
+        helper_name = Path(self.module.__file__).parent.stem
+        if changelog.exists():
+            with open(changelog, encoding='utf-8') as changelog_file:
+                return render_md(changelog_file.read())
+        return f"Module '{helper_name}' has no available changelog."
 
     def __getattr__(self, name):
         return getattr(self.helper, name)

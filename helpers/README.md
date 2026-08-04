@@ -142,6 +142,7 @@ The following names are reserved and must not be used for custom helper methods 
 - `version` - prints module version information.
 - `requirements` - prints module requirements information.
 - `help` - prints method or module help.
+- `changes` - prints module changelog.
 
 ### Reserved Arguments
 

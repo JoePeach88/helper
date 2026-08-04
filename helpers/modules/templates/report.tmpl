@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title id="head-title">Summary for all tests</title>
+      <link href="assets\style.css" rel="stylesheet" type="text/css"/>
+  </head>
+  <body>
+    <h1 id="title">test_changes.html</h1>
+    <div class="summary">
+      <div class="summary__data">
+        <h2>Summary</h2>
+      </div>
+    </div>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th onclick="sortTable(0)" class="sortable" data-column-type="test_name">Test</th>
+          <th onclick="sortTable(1)" class="sortable" data-column-type="result">Result</th>
+          <th onclick="sortTable(2)" class="sortable" data-column-type="link">Link</th>
+        </tr>
+{table_content}
+      </thead>
+    </table>
+    <script>
+      function sortTable(columnIndex) {{
+          const table = document.getElementById("results-table");
+          const tbody = table.querySelector("tbody");
+          const rows = Array.from(tbody.querySelectorAll("tr"));
+
+          // Check current sorting direction or default to ascending
+          const currentDir = table.getAttribute("data-sort-dir") === "asc" ? "desc" : "asc";
+          table.setAttribute("data-sort-dir", currentDir);
+
+          // Sort rows array
+          rows.sort((rowA, rowB) => {{
+              const cellA = rowA.cells[columnIndex].textContent.trim();
+              const cellB = rowB.cells[columnIndex].textContent.trim();
+
+              // Perform locale-aware string comparison
+              const comparison = cellA.localeCompare(cellB);
+
+              return currentDir === "asc" ? comparison : -comparison;
+          }});
+
+          // Re-append sorted rows into the tbody
+          rows.forEach(row => tbody.appendChild(row));
+      }}
+    </script>
+  </body>
+</html>

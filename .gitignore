@@ -19,6 +19,9 @@ setup.*
 # Ignore additional files
 backup/*
 
+# Ignore tests directories
+tests/
+
 ### AUTO-GENERATED IGNORS ###
 
 # Byte-compiled / optimized / DLL files

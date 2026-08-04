@@ -3,6 +3,7 @@ import inspect
 import traceback
 import sys
 import time
+import re
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.syntax import Syntax
@@ -47,6 +48,19 @@ def render_md(content: str):
     with console.capture() as capture:
         console.print(Markdown(content))
     return capture.get()
+
+
+def mask(d: dict):
+    masked_dict = {}
+    pattern = re.compile(r'.*(token|secret|password).*', re.IGNORECASE)
+    for key, value in d.items():
+        if isinstance(value, dict):
+            masked_dict[key] = mask(value)
+        elif pattern.search(key):
+            masked_dict[key] = '****'
+        else:
+            masked_dict[key] = value
+    return masked_dict
 
 
 def print_message(message: str, message_level: str = INFO, force: bool = False, debug: bool = False):
@@ -129,18 +143,16 @@ def less(string: str):
     Such as less on unix systems, but more simplier :).
     """
     def wait_for_user_input():
-        input_char = userinpurt.getch()
-        second_char = None
-        full_chars = ''
+        input_char = userinpurt.getch().lower()
         if input_char in [b':', ':']:
-            second_char = userinpurt.getch()
+            second_char = userinpurt.getch().lower()
             full_chars = input_char + second_char
         else:
             full_chars = input_char
-        full_chars = full_chars.lower()
-        return full_chars in [b'\r', '\n'], full_chars in [b':e', ':e']
+            
+        return full_chars in [b'\r', '\n'], full_chars == b':e'
 
-    # Check that string is file path
+    # Check if the string is a file path and read its content
     if Path(string).exists():
         with open(string, 'r', encoding='utf-8') as file:
             string = file.read()
@@ -148,24 +160,24 @@ def less(string: str):
     string_lines = string.split('\n')
     count = 0
     max_lines = LESS_LINES
-    scroll_step = 1
 
     for line in string_lines:
         print(line)
         count += 1
         
-        if count > max_lines:
+        if count >= max_lines:
             print('---MORE---')
             skip_line, scroll_end = wait_for_user_input()
-            if not skip_line and not scroll_end:
+            
+            if not skip_line:
                 exit(0)
             elif scroll_end:
-                scroll_step = len(string_lines)
+                max_lines = len(string_lines)
             
+            # Clear the last printed line
             sys.stdout.write('\x1b[1A')
             sys.stdout.write('\x1b[2K')
             sys.stdout.flush()
-            max_lines += scroll_step
 
 
 def print_choice(message: str):
