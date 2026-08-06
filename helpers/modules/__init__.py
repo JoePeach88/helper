@@ -555,7 +555,7 @@ class modulesHelper:
             for kwarg_name, kwarg_value in kwargs.items():
                 pytest_args.append(f'-{kwarg_name} {kwarg_value}' if not isinstance(kwarg_value, bool) else f'--{kwarg_name}')
             print_message(f"Running test file '{test}'...")
-            test_result = pytest.main(pytest_args, ['no:cacheprovider'])
+            test_result = pytest.main(pytest_args, ['no:cacheprovider', 'no:warnings'])
             reports.append({
                 'name': test.stem,
                 'result': test_result
@@ -565,11 +565,8 @@ class modulesHelper:
                 status = "Passed" if report_data["result"] == 0 else "Failed"
                 color = "green" if report_data["result"] == 0 else "red"
                 table_content.append('        <tr>')
-                table_content.append(f"          <td>{report_data['name']}</td>")
-                table_content.append(
-                    f'<td style="color: {color};">{status}</td>'
-                )
                 table_content.append(f"          <td><a href=\"{reports_path / report_data['name']}.html\">{report_data['name']}</a></td>")
+                table_content.append(f"          <td style=\"color: {color};\">{status}</td>")
                 table_content.append('        </tr>')
             table_content.append('      </tbody>')
             self.rendertemplate('report', summary_report, force=True, table_content='\n'.join(table_content))

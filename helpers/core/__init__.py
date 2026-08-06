@@ -90,6 +90,17 @@ class coreHelper:
             loader.set(section, option, value)
             return f"The following values ​​are set:\n  Section: {section}\n  Option: {option}\n  Value: {value}"
 
+        def rm(self, section: str, option: str = None):
+            """
+            **Method removes specified section or option.**
+            ```
+            Usage:
+                core config rm <section> <option>
+            ```
+            """
+            loader.remove(section, option)
+            return f"The following values ​​are removed:\n  Section: {section}\n  Option: {option if option else ''}"
+
         def ls(self, pretty: bool = True):
             """
             **Method displays all config data.**

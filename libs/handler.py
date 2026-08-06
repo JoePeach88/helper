@@ -225,7 +225,7 @@ def detect_handler(method, arguments):
     elif method in ['version', '-v', '--version']:
         version_handler()
     elif method in ['changelog', 'changes']:
-        changelog = Path(__file__).parent.parent / 'CHANGELOG.md'
+        changelog = Path(__file__).parent.parent / (f"changelogs/{__version__}-{__release__}.md" if not arguments else f"changelogs/{'-'.join(arguments)}.md")
         if changelog.exists():
             with open(changelog, encoding='utf-8') as changelog_file:
                 changes_content = render_md(changelog_file.read())

@@ -7,6 +7,7 @@
 - [**config**](#config) [module]
 - [get](#get)
 - [ls](#ls)
+- [rm](#rm)
 - [set](#set)
 - [**logs**](#logs) [module]
 - [flush](#flush)
@@ -56,6 +57,14 @@ core config get <section> <option>
 ```
 Usage:
 core config ls
+```
+
+### rm
+
+**Method removes specified section or option.**
+```
+Usage:
+core config rm <section> <option>
 ```
 
 ### set

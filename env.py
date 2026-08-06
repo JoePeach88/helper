@@ -12,7 +12,7 @@ from typing import Any, Optional
 
 __version__ = '1.2.0'
 __version_name__ = 'summer'
-__release__ = 'dev'
+__release__ = 'stable'
 __product_name__ = 'helper'
 __required_python__ = (3, 7)
 
@@ -91,6 +91,14 @@ class ConfigLoader:
         if not self.config.has_section(section):
             self.config.add_section(section)
         self.config.set(section, option, value)
+        with open(self.config_path, 'w+', encoding='utf-8') as configfile: 
+            self.config.write(configfile)
+
+    def remove(self, section: str, option: str = None):
+        if self.config.has_section(section) and not option:
+            self.config.remove_section(section)
+        elif self.config.has_section(section) and option:
+            self.config.remove_option(option)
         with open(self.config_path, 'w+', encoding='utf-8') as configfile: 
             self.config.write(configfile)
 

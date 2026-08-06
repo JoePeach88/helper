@@ -77,7 +77,7 @@ def windows_installer(structure: list, requirements: list):
         "\t\tWrite-Host \"Something went wrong during installation. Abort.\nLast exit code: $exit_code\"\n",
         "\t} else {\n",
         f"\t\tWrite-Host '{__product_name__} CLI v.{__version__} ({__version_name__}) (build date: {datetime.now()}) successfully installed!'\n",
-        f"\t\tRemove-Item -Force ./{installer_path.as_posix()}\n",
+        f"\t\tRemove-Item -Force $PSCommandPath\n",
         '\t\t$oldPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")\n',
         '\t\t$installPath = Convert-Path $location\n',
         '\t\tif (($env:Path -split \';\') -contains $installPath) {\n',
@@ -137,16 +137,19 @@ EOF
     for entry in structure:
         append_item(Path(entry), Path(entry) in requirements)
 
-    commands.extend(['\techo "Structure prepared."\n', '\techo "Installing dependencies..."\n'])
+    commands.extend([
+        '\techo "Structure prepared."\n',
+        '\techo "Installing dependencies..."\n'
+    ])
     for requirement in requirements:
-        commands.append(f"\tpip install -r $location/{requirement.as_posix()} --break-system-packages")
+        commands.append(f"\tpip install -r $location/{requirement.as_posix()}\n")
         commands.append(exit_code_check('Unix'))
     commands.extend([
         "\tif [ $exit_code -ne 0 ]; then\n",
         "\t\techo \"Something went wrong during installation. Abort.\nLast exit code: ${exit_code}\"\n",
         "\telse\n",
         f"\t\techo '{__product_name__} CLI v.{__version__} ({__version_name__}) (build date: {datetime.now()}) successfully installed!'\n",
-        f"\t\trm -f ./{installer_path.as_posix()}\n",
+        f"\t\trm -f \"$0\"\n",
         "\t\tinstall_location=$(realpath $location)\n",
         "\t\techo $PATH | grep -q \"${install_location}\" && echo \"export PATH=\\\"\$PATH:${install_location}\\\"\" >> ~/.bashrc && source ~/.bashrc\n",
         "\t\tchmod +x $location/helper\n",

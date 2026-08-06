@@ -2,8 +2,8 @@
 - ./templates/documentation.tmpl: 01721df5c79a588416c823eec6aafaf7e5dbf73a192dc3ac92e67a640cd49c53
 - ./templates/github-release.tmpl: 018b2301d0ca81f3ee3f6297890e2e202155d847486596515bb5889bfde8fe03
 - ./templates/module.tmpl: 856aedc6b8912447dd05fc04d82013edb74e269b984204209ced45d29d2d3dd0
-- ./templates/report.tmpl: 3574ce42cfad354c3e2bdb826d1197d53df34d4b4bf2171ca302699f7a597fb7
+- ./templates/report.tmpl: daede5167b05b3278dcc2379e872fa04946f66c74850394c1bcf82f45cd386c2
 - ./templates/scenario.tmpl: 1a418c472884ee321cb8ec51c0663457ed7b7d2d5626b20f382d7d08e9e9fa92
 - ./templates/test.tmpl: cec636ba42ead899187a4b3f60e6ed0e660b79003581b775593869660e4e93cf
 - ./utils.py: 4d54bcf969d2e23655bde722c18fae71a1695f8f01fe5de9c1e5cd852c800843
-- ./__init__.py: 2f09c251a042c04fa8c39256531960fa0040ed4cbc0684d5871c9d7ea26d68a8
+- ./__init__.py: b8ec3e7c3d0e1cb8a0345b7013c55475cda7f878e1aec79e46f02a3866797b14
