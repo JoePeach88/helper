@@ -51,7 +51,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: helper v.${{ steps.build.outputs.release_name }} ${{ steps.check_type.outputs.is_prerelease == 'true' && '(dev)' || '(stable)' }}
-          body_path: ./changelogs/${{env.GITHUB_REF_NAME}}${{ steps.check_type.outputs.is_prerelease == 'true' && '' || '-stable' }}.md
+          body_path: ./changelogs/${{ github.ref_name }}${{ steps.check_type.outputs.is_prerelease == 'true' && '' || '-stable' }}.md
           draft: false
           prerelease: ${{ steps.check_type.outputs.is_prerelease == 'true' }}
 
