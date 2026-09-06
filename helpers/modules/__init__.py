@@ -5,12 +5,47 @@ import yaml
 import glob
 import pytest
 import pytest_html
+import shutil
+import webview
+import threading
+import psutil
+from deep_translator import GoogleTranslator, ChatGptTranslator, YandexTranslator, MicrosoftTranslator, MyMemoryTranslator
+from concurrent.futures import ThreadPoolExecutor
+from copy import copy
+from bs4 import BeautifulSoup
 from git import Repo
 from rich.console import Console
 from rich.markdown import Markdown
 from pipreqs import pipreqs
-from helpers.modules.utils import github_url_to_releases_api, github_repo_to_ssh, test_github_connection, retrieve_json, install_module, uninstall_module, determine_type, pack_module, get_file_sha256, get_dir_size, format_bytes
-from helpers import mask, print_message, print_choices, _load_modules_from_directory, HELPERS_DIR, INFO, WARNING, ERROR, SYSTEM_PLATFORM
+from helpers.modules.utils import (
+    github_url_to_releases_api,
+    github_repo_to_ssh,
+    test_github_connection,
+    retrieve_json,
+    install_module,
+    uninstall_module,
+    determine_type,
+    pack_module,
+    get_file_sha256,
+    get_dir_size,
+    format_bytes
+)
+from helpers import (
+    mask,
+    spinning_loader,
+    lang,
+    print_message,
+    print_choices,
+    render_md,
+    _load_modules_from_directory,
+    HELPERS_DIR,
+    INFO,
+    WARNING,
+    ERROR,
+    SYSTEM_PLATFORM,
+    lang,
+    BASE_LIBRARY
+)
 from env import loader, PIP_PROXY, __version__, __release__
 from pathlib import Path
 
@@ -45,50 +80,37 @@ __methods_static_aliases__ = {
 
 
 class modulesHelper:
-    """
-    **Module to work with helper modules.**
-    """
     def __init__(self, settings: dict):
         self.settings = settings
         not_silent = True
         self.templates = {Path(file).stem: file for file in glob.glob(os.path.join(Path(Path(__file__).parent / 'templates'), "*.tmpl"))}
         if self.settings.get('modules:module', {}).get('silent_load', 'True') == 'True':
             not_silent = False
-            print_message("Loading modules silently to retrieve it information.")
+            print_message('Loading modules silently to retrieve it information.')
         else:
             not_silent = True
-            print_message("Loading modules to retrieve it information.")
+            print_message('Loading modules to retrieve it information.')
         all_helpers = _load_modules_from_directory(HELPERS_DIR, package=HELPERS_DIR.name, force=not_silent)
         self.helpers = all_helpers[0]
         self.disabled_helpers = all_helpers[1]
+        all_helpers = self.helpers
+        all_helpers.extend(self.disabled_helpers)
 
         # Subclasses
-        self.update = self.update(settings.get('modules:update', {}), self.helpers)
+        self.test = self.test(settings.get('modules:test', {}), self.rendertemplate)
+        self.update = self.update(settings.get('modules:update', {}), all_helpers)
+        self.language = self.language(settings.get('modules:language', {}), all_helpers)
 
     def ls(self, all: bool = False, pretty: bool = True):
-        """
-        **Method displays all available modules.**
-        ```
-        Usage:
-            modules ls
-        ```
-        """
         helpers_list = []
         helpers = self.helpers
         if all:
             helpers.extend(self.disabled_helpers)
         for module in helpers:
             helpers_list.append(module.__name__.split('.')[-1])
-        return f'Available modules ({len(helpers_list)}):\n' + '\n'.join(helpers_list) if pretty else helpers_list
+        return lang.get(helpers_len=len(helpers_list), helpers_list='\n'.join(helpers_list)) if pretty else helpers_list
 
     def info(self, module: str = None, pretty: bool = True):
-        """
-        **Method displays information about installed module.**
-        ```
-        Usage:
-            modules info --module <module_name>
-        ```
-        """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         if not module:
@@ -100,143 +122,128 @@ class modulesHelper:
                     author = helper.__module_author__
                     version = helper.__module_version__
                     builtin = 'core' in helper.__module_category__ or 'builtin' in helper.__module_category__
+                    language_directory = HELPERS_DIR / f"{helper.__name__.split('.')[-1]}/lang"
+                    lang_files = sorted(language_directory.glob("*.lng"))
+                    languages = []
+                    languages_pretty = []
+                    for lang_file in lang_files:
+                        with lang_file.open(encoding="utf-8") as lang_file_stream:
+                            lang_file_data = yaml.safe_load(lang_file_stream) or {}
+                            lang_name = lang_file_data.get('metadata', {}).get('lang')
+                            if lang_name:
+                                languages.append({
+                                    lang_file.stem: {
+                                        'name': lang_name,
+                                        'file': lang_file
+                                    }
+                                })
+                                languages_pretty.append(lang_name)
+                    if not languages:
+                        languages.append({
+                            'en_US': {
+                                'name': 'English',
+                                'file': None
+                            }
+                        })
+                        languages_pretty.append('English')
                     link = helper.__module_link__
                     compatibility = 'all' in helper.__module_compatibility__ or SYSTEM_PLATFORM in helper.__module_compatibility__
                     size = get_dir_size(Path(helper.__file__).parent)
-                    return f"Name: {name}\nAuthor: {author}\nVersion: {version}\nBuiltin: {'Yes' if builtin else 'No'}\nLink: {link}\nPath: {Path(helper.__file__).parent}\nCompatible: {'Yes' if compatibility else 'No'}\nSize: {format_bytes(size)}" if pretty else {'name': name, 'author': author, 'version': version, 'builtin': builtin, 'link': link, 'path': Path(helper.__file__).parent, 'compatibility': compatibility, 'size': size}
-            return f"Module with name '{module}' not found." if pretty else {}
+                    return lang.get(key='info', name = name, version = version, author = author, builtin = BASE_LIBRARY['yes'] if builtin else BASE_LIBRARY['no'], 
+                             link = link, path = Path(helper.__file__).parent, languages = ', '.join(languages_pretty), compatibility = BASE_LIBRARY['yes'] if compatibility else BASE_LIBRARY['no'], size = format_bytes(size)) if pretty else {'name': name, 'author': author, 'version': version, 'builtin': builtin, 'link': link, 'path': Path(helper.__file__).parent, 'compatibility': compatibility, 'languages': languages, 'size': size}
+            return lang.get(key='not_found', module = module) if pretty else {}
 
     def disable(self, module: str):
-        """
-        **Method disables module.**
-        ```
-        Usage:
-            modules disable --module <module_name>
-        ```
-        """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         for helper in all_helpers:
             if helper.__name__.split('.')[-1] == module and not (helper.__name__.split('.')[-1] in ['core', 'modules'] or ('core' in helper.__module_category__ or 'builtin' in helper.__module_category__)):
                 loader.set(module, 'enabled', 'False')
-                return f"Module '{module}' disabled."
+                return lang.get(key='disabled', module=module)
             else:
-                return f"Module '{module}' is builtin."
-        return f"Module '{module}' not found."
+                return lang.get(key='builtin', module=module)
+        return lang.get(key='not_found', module=module)
 
     def enable(self, module: str):
-        """
-        **Method enables module.**
-        ```
-        Usage:
-            modules enable --module <module_name>
-        ```
-        """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         for helper in all_helpers:
             if helper.__name__.split('.')[-1] == module and not (helper.__name__.split('.')[-1] in ['core', 'modules'] or ('core' in helper.__module_category__ or 'builtin' in helper.__module_category__)):
                 loader.set(module, 'enabled', 'True')
-                return f"Module '{module}' enabled."
-        return f"Module '{module}' not found."
+                return lang.get(key='enabled', module=module)
+            else:
+                return lang.get(key='builtin', module=module)
+        return lang.get(key='not_found', module=module)
 
     def install(self, module: str, location: str, version: str = None, force: bool = False, skip_check: bool = False):
-        """
-        **Method installs specified module from link or from path.**
-        ```
-        Usage:
-            modules install <module_name> --location <link or path>
-        ```
-        """
         if module not in ['core', 'modules']:
             link_type = determine_type(location)
             return install_module(module, location, version, link_type, force=force, skip_check=skip_check)
         else:
-            return f"Module '{module}' is builtin."
+            return lang.get(module=module)
 
     def uninstall(self, module: str, yes: bool = False):
-        """
-        **Method uninstalls specified module.**
-        ```
-        Usage:
-            modules uninstall <module_name>
-        ```
-        """
         if module not in ['core', 'modules']:
             return uninstall_module(module, force=yes)
         else:
-            return f"Module '{module}' is builtin."
+            return lang.get(module=module)
 
     def create(self, module: str, name: str = None, author: str = None, version: str = None, systems: str = None, force: bool = False):
-        """
-        **Method creates empty module from template for development.**
-        ```
-        Usage:
-            modules create <module_name> --name ModuleName --author Author --version 1.0.0 --systems Linux,Windows,Darwin
-        ```
-        """
+        if None in [module, name, author, version, systems]:
+            return
         if module in ['core', 'modules']:
-            return f"Module '{module}' is builtin."
+            return lang.get(key='builtin', module=module)
         module_path = Path(f"{HELPERS_DIR}/{module}").absolute()
-        github_path = Path(f"{HELPERS_DIR}/{module}/.github/workflows").absolute()
+        if module_path.exists() and force:
+            shutil.rmtree(module_path)
+        github_path = Path(f"{module_path}/.github/workflows").absolute()
         init_path= Path(f"{module_path}/__init__.py").absolute()
         install_scenario_path = Path(f"{module_path}/INSTALL.sc").absolute()
         uninstall_scenario_path = Path(f"{module_path}/UNINSTALL.sc").absolute()
+        langs_path = Path(f"{module_path}/lang").absolute()
+        gitignore_path = Path(f"{module_path}/.gitignore").absolute()
+        lang_path = langs_path / 'en_US.lng'
         release_path = github_path / 'create-release.yml'
-        os.makedirs(github_path, mode=0o750, exist_ok=True)
-        os.makedirs(module_path, mode=0o750, exist_ok=True)
-        if (init_path.exists() or install_scenario_path.exists() or uninstall_scenario_path.exists()) and force:
-            os.remove(init_path)
-            os.remove(install_scenario_path)
-            os.remove(uninstall_scenario_path)
         self.rendertemplate('github-release', release_path, pretty = False, module = module)
         self.rendertemplate('scenario', install_scenario_path, pretty = False)
         self.rendertemplate('scenario', uninstall_scenario_path, pretty = False)
+        self.rendertemplate('language', lang_path, pretty = False, author = author, version = version, module = module)
+        self.rendertemplate('gitignore', gitignore_path, pretty = False)
         if self.rendertemplate('module', init_path, force = force, pretty = False, module = module, name = name, author = author, version = version, systems = ", ".join(f"'{system}'" for system in systems.split(","))):
-            return f"Module '{module}' created."
+            return lang.get(key='created', module=module)
         else:
-            return f"Module '{module}' already exists."
+            return lang.get(key='exists', module=module)
 
     def rendertemplate(self, template: str, file: str, force: bool = False, pretty: bool = True, **kwargs):
-        """
-        **Method renders template from templates path.**
-        ```
-        Usage:
-            modules rendertemplate <template> <file> <args>
-        ```
-        """
         template_path = self.templates.get(template)
 
         if not template_path or not Path(template_path).exists():
-            return f"Template '{template}' not exists." if pretty else False
+            return lang.get(key='not_exists', template=template) if pretty else False
 
         with open(template_path, 'r', encoding='utf-8') as template_file:
             template_data = template_file.read()
 
         if not template_data:
-            return f"Template '{template}' has no data." if pretty else False
+            return lang.get(key='no_data', template=template) if pretty else False
 
         template_data = template_data.format(**kwargs)
         file_path = Path(file)
+        file_parent = file_path.parent
+        os.makedirs(file_parent, mode=0o755, exist_ok=True)
 
         if force or not file_path.exists():
             mode = 'x' if not file_path.exists() else 'w'
             with open(file_path, mode, newline="\n", encoding='utf-8') as output_file:
                 output_file.write(template_data)
-            return f"Template '{template}' rendered to '{file_path}'." if pretty else True
+            return lang.get(key='rendered', template=template, file_path=file_path) if pretty else True
 
-        return f"Template '{template}' not rendered." if pretty else False
+        return lang.get(key='not_rendered', template=template) if pretty else False
 
     def rendermd(self, module: str):
-        """
-        **Module renders README.md.**
-        ```
-        Usage:
-            modules rendermd <module_name>
-        ```
-        """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
+        # Change prefered language to en_US
+        lang.lang = 'en_US'
         if module:
             for helper in all_helpers:
                 if helper.__name__.split('.')[-1] == module:
@@ -280,7 +287,7 @@ class modulesHelper:
                             # determine class method
                             if (not callable(method_object) or isinstance(method_object, type)) and not isinstance(method_object, str):
                                 methods_description.append(f"## {method}\n")
-                                method_doc = method_object.__doc__
+                                method_doc = lang.get(Path(__file__).parent.parent / f'{module}/__init__.py', method_object.__qualname__, return_description=True) or method_object.__doc__
                                 if method_doc:
                                     method_doc = re.sub(r" \s+", "", method_doc).strip()
                                 methods_description.append(f"{method_doc}\n")
@@ -289,13 +296,13 @@ class modulesHelper:
                                     class_method_object = getattr(method_object, class_method)
                                     if not class_method.startswith('_') and (callable(class_method_object) or not isinstance(method_object, (list, str, dict, int, float, bool, tuple, set, type(helper.helper), type(None)))):
                                         methods_description.append(f"### {class_method}\n")
-                                        class_method_doc = class_method_object.__doc__
+                                        class_method_doc = lang.get(Path(__file__).parent.parent / f'{module}/__init__.py', class_method_object.__qualname__, return_description=True) or class_method_object.__doc__
                                         if class_method_doc:
                                             class_method_doc = re.sub(r" \s+", "", class_method_doc).strip()
                                         methods_description.append(f"{class_method_doc}\n")
                             else:
                                 methods_description.append(f"### {method}\n")
-                                method_doc = method_object.__doc__
+                                method_doc = lang.get(Path(__file__).parent.parent / f'{module}/__init__.py', method_object.__qualname__, return_description=True) or method_object.__doc__
                                 if method_doc:
                                     method_doc = re.sub(r" \s+", "", method_doc).strip()
                                 methods_description.append(f"{method_doc}\n")
@@ -308,19 +315,12 @@ class modulesHelper:
                                                                       version = version, platforms = platforms, methods_description = methods_description)
                     else:
                         print_message('Documentation template not exists, aborting md creation.', ERROR)
-                        return 'Documentation template not exists, aborting md creation.'
+                        return lang.get(key='template_not_exists')
                     with open(module_readme, 'w' if module_readme.exists() else 'x', newline="\n", encoding='utf-8') as module_readme_file:
                         module_readme_file.write(documentation)
-                    return f"README.md successfully rendered to '{module_readme.absolute()}'."
+                    return lang.get(key='rendered', readme_path=module_readme.absolute())
 
     def renderreq(self, module: str):
-        """
-        **Module renders requirements.txt.**
-        ```
-        Usage:
-            modules renderreq <module_name>
-        ```
-        """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         if module:
@@ -342,18 +342,12 @@ class modulesHelper:
                         reqs_file.writelines(reqs_lines)
                     if not reqs_lines:
                         os.remove(reqs)
-                        print_message(f"requirements.txt for module '{module}' not rendered cause output from pipreqs is empty.", WARNING, force=True)
+                        print_message(f"requirements.txt for module '{module}' not rendered cause output from pipreqs is empty.", WARNING)
+                        return lang.get(key='not_rendered', module=module)
                     else:
-                        return f"requirements.txt successfully rendered for module '{module}' and saved to '{reqs}'."
+                        return lang.get(key='rendered', module=module, reqs=reqs)
 
     def renderhash(self, module: str):
-        """
-        **Method renders hash for each module file.**
-        ```
-        Usage:
-            modules renderhash <module_name>
-        ```
-        """
         def process_files(helper_path, directory, module, hash_list):
             for item in directory.iterdir():
                 if item.name in ['.git', '.github', 'tests']:
@@ -389,23 +383,15 @@ class modulesHelper:
                     hash_list_file = helper_path / 'SHA256'
                     with open(hash_list_file, 'w' if hash_list_file.exists() else 'x', newline="\n", encoding='utf-8') as f:
                         f.write(yaml.dump(hash_list))
-                    return f"SHA256 hash table successfully rendered to '{hash_list_file.absolute()}'."
+                    return lang.get(hash_list_file=hash_list_file.absolute())
 
     def rendertests(self, module: str):
-        """
-        **Method renders tests from template for specified module.**
-        ```
-        Usage:
-            modules rendertests <module>
-        ```
-        """
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         if module:
             for helper in all_helpers:
                 if helper.__name__.split('.')[-1] == module:
                     tests_path = Path(f"{HELPERS_DIR}/{module}/tests").absolute()
-                    os.makedirs(tests_path, mode=0o750, exist_ok=True)
                     obj = getattr(helper, f"{module}Helper")
                     disabled_methods = helper.__module_disabled_methods__
                     methods = dir(obj)
@@ -427,31 +413,19 @@ class modulesHelper:
                             else:
                                 methods_list.append(method)
                     for method in methods_list:
-                        function_name = re.match(r'^(?:.*\.)?(\w+)$', method).group(1)
+                        function_name = method.replace('.', '_')
                         self.rendertemplate('test', Path(f'{tests_path}/test_{function_name}.py'), force=True, module=module, function_name=function_name, function=method)
-                    return f"Tests for module '{module}' rendered successfully."
+                    return lang.get(module=module)
 
     def pack(self, *modules, location: str = None):
-        """
-        **Method prepare module and packs it to tar archive.**
-        ```
-        Usage:
-            1. To default pack location:
-                modules pack <module_name>
-            2. To specified pack location:
-                modules pack <module_name> --location <location>
-            3. To pack few modules:
-                modules pack <module1> <module2> --location <location>
-        ```
-        """
         for module in modules:
             if module in ['core', 'modules']:
-                return f"Module '{module}' is builtin."
+                return lang.get(key='builtin', module=module)
             module_info = self.info(module, pretty=False)
             if module_info:
                 module_version = module_info['version']
             else:
-                return f"Module '{module}' not found."
+                return lang.get(key='not_found', module=module)
             print_message("Rendering module requirements, please wait...", force=True)
             self.renderreq(module)
             print_message("Rendering module manual, please wait...", force=True)
@@ -461,16 +435,8 @@ class modulesHelper:
             print_message(pack_module(module, module_version, location), force=True)
 
     def push(self, module: str):
-        """
-        **Method pushes module source code to it`s repo.**
-        >NOTE: Before using this method, configure your GitHub account to use SSH keys.
-        ```
-        Usage:
-            modules push <module_name>
-        ```
-        """
         if module in ['core', 'modules']:
-            return f"Module '{module}' is builtin."
+            return lang.get(key='builtin', module=module)
         module_info = self.info(module, pretty=False)
         if not module_info:
             return
@@ -483,14 +449,14 @@ class modulesHelper:
         connection_test, user = test_github_connection()
 
         if not connection_test:
-            return "Seems like your GitHub account not configured to use SSH keys."
+            return lang.get(key='not_configured')
 
         if module_link and module_path:
-            print_message("Rendering module requirements, please wait...", force=True)
+            print_message(lang.get(key='render_reqs'), force=True)
             self.renderreq(module)
-            print_message("Rendering module manual, please wait...", force=True)
+            print_message(lang.get(key='render_man'), force=True)
             self.rendermd(module)
-            print_message("Rendering module hash table, please wait...", force=True)
+            print_message(lang.get(key='render_hash'), force=True)
             self.renderhash(module)
 
             module_git_repo = Path(module_path) / '.git'
@@ -521,76 +487,75 @@ class modulesHelper:
             try:
                 remote.push(branch_name)
                 remote.push(repo.tags[-1])
-                return f"Module '{module}' successfully pushed to {module_link}."
+                return lang.get(key='success', module=module, module_link=module_link)
             except Exception as e:
                 if "no upstream branch" in str(e):
                     repo.git.push('--set-upstream', remote_name, branch_name)
                     remote.push(repo.tags[-1])
-                    return f"Module '{module}' successfully pushed to {module_link}."
+                    return lang.get(key='success', module=module, module_link=module_link)
                 else:
                     print_message(f'Something went wrong when trying to push module’s contents: {e}.', ERROR)
 
-    def test(self, module: str, verbose: bool = False, report: bool = False, **kwargs):
-        """
-        **Method runs tests for specified module.**
-        ```
-        Usage:
-            1. Only test, without reports:
-                modules test <module>
-            2. Test with reports rendering:
-                module test <module> --report
-        ```
-        """
-        tests = {Path(file): file for file in glob.glob(os.path.join(Path(Path(HELPERS_DIR) / f'{module}/tests'), "*.py"))}
-        reports = []
-        reports_path = Path(HELPERS_DIR) / f'{module}/tests/reports'
-        summary_report = Path(HELPERS_DIR) / f'{module}/tests/reports/summary.html'
-        table_content = ['      <tbody>',]
-        for test in tests:
-            pytest_args = [test]
+    class test:
+        def __init__(self, settings: dict, rendertemplatefunc):
+            self.settings = settings
+            self._rendertemplate = rendertemplatefunc
+
+        def viewreport(self, module: str, report: str = 'summary', maximized: bool = False, debug: bool = False):
+            reports_path = Path(HELPERS_DIR) / f'{module}/tests/reports'
+            report_path = reports_path / f'{report}.html'
+            if report_path.exists():
+                confirm_close = self.settings.get('report_confirm_close', 'False') == 'True'
+                resizable = self.settings.get('report_resizable', 'False') == 'True'
+                webview.create_window(str(report_path), f'file://{str(report_path)}', maximized=maximized, text_select=True, width=850, resizable=resizable, confirm_close=confirm_close)
+                webview.start(debug=debug)
+
+        def start(self, module: str, verbose: bool = False, report: bool = False, **kwargs):
+            tests = {Path(file): file for file in glob.glob(os.path.join(Path(Path(HELPERS_DIR) / f'{module}/tests'), "*.py"))}
+            reports = []
+            reports_path = Path(HELPERS_DIR) / f'{module}/tests/reports'
+            summary_report = reports_path / 'summary.html'
+            table_content = ['      <tbody>',]
+            for test in tests:
+                pytest_args = [test]
+                if report:
+                    pytest_args.append(f"--html={Path(HELPERS_DIR) / f'{module}/tests/reports/{test.stem}.html'}")
+                pytest_args.append('-vv' if verbose else '-q')
+                for kwarg_name, kwarg_value in kwargs.items():
+                    pytest_args.append(f'-{kwarg_name} {kwarg_value}' if not isinstance(kwarg_value, bool) else f'--{kwarg_name}')
+                print_message(f"Running test file '{test}'...")
+                test_result = pytest.main(pytest_args, ['no:cacheprovider', 'no:warnings'])
+                reports.append({
+                    'name': test.stem,
+                    'result': test_result
+                })
             if report:
-                os.makedirs(reports_path, mode=0o750, exist_ok=True)
-                pytest_args.append(f"--html={Path(HELPERS_DIR) / f'{module}/tests/reports/{test.stem}.html'}")
-            pytest_args.append('-vv' if verbose else '-q')
-            for kwarg_name, kwarg_value in kwargs.items():
-                pytest_args.append(f'-{kwarg_name} {kwarg_value}' if not isinstance(kwarg_value, bool) else f'--{kwarg_name}')
-            print_message(f"Running test file '{test}'...")
-            test_result = pytest.main(pytest_args, ['no:cacheprovider', 'no:warnings'])
-            reports.append({
-                'name': test.stem,
-                'result': test_result
-            })
-        if report:
-            for report_data in reports:
-                status = "Passed" if report_data["result"] == 0 else "Failed"
-                color = "green" if report_data["result"] == 0 else "red"
-                table_content.append('        <tr>')
-                table_content.append(f"          <td><a href=\"{reports_path / report_data['name']}.html\">{report_data['name']}</a></td>")
-                table_content.append(f"          <td style=\"color: {color};\">{status}</td>")
-                table_content.append('        </tr>')
-            table_content.append('      </tbody>')
-            self.rendertemplate('report', summary_report, force=True, table_content='\n'.join(table_content))
-            return f"Summary report rendered to '{summary_report}'."
+                for report_data in reports:
+                    with open(f"{reports_path / report_data['name']}.html", 'r+', encoding='utf-8') as html_data:
+                        soup = BeautifulSoup(html_data, 'html.parser')
+                        back_button = soup.new_tag("a", href=f"{reports_path}/summary.html")
+                        back_button.string = 'Back'
+                        soup.body.insert(0, back_button)
+                        html_data.seek(0)
+                        html_data.write(soup.prettify())
+                        html_data.truncate()
+
+                    status = "Passed" if report_data["result"] == 0 else "Failed"
+                    color = "green" if report_data["result"] == 0 else "red"
+                    table_content.append('        <tr>')
+                    table_content.append(f"          <td><a href=\"{reports_path / report_data['name']}.html\">{report_data['name']}</a></td>")
+                    table_content.append(f"          <td style=\"color: {color};\">{status}</td>")
+                    table_content.append('        </tr>')
+                table_content.append('      </tbody>')
+                self._rendertemplate('report', summary_report, force=True, table_content='\n'.join(table_content), tests_count = len(reports))
+                return render_md(lang.get(summary_report=summary_report, module=module))
 
     class update:
-        """
-        **Module to manipulate and check updates for modules.**
-        """
         def __init__(self, settings: dict = None, helpers: list = None):
             self.settings = settings
             self.helpers = helpers
 
         def changes(self, module: str = None):
-            """
-            **Method prints changelog for module.**
-            ```
-            Usage:
-                1. With prompt to select available modules.
-                    modules update changes
-                2. With specified module.
-                    modules update changes --module <module_name>
-            ```
-            """
             if not module:
                 module = print_choices([helper.__name__.split('.')[-1] for helper in self.helpers], exit_btn=True)
             if module:
@@ -598,8 +563,8 @@ class modulesHelper:
                 if not changelog_path.exists():
                     module_updated = self.check(module, pretty=False)
                     if not module_updated:
-                        print_message("Nothing to install.", force=True)
-                        return
+                        print_message("Nothing to install.")
+                        return lang.get()
                     else:
                         return module_updated[0]['body']
                 else:
@@ -610,16 +575,6 @@ class modulesHelper:
                         return capture.get()
 
         def check(self, module: str = None, pretty: bool = True):
-            """
-            **Method checks updates for modules or specified module.**
-            ```
-            Usage:
-                1. Without specified module name:
-                    modules update check
-                2. With specified module name:
-                    modules update check --module module_name
-            ```
-            """
             helpers = self.helpers.copy()
             helpers_for_update = []
             if module:
@@ -629,8 +584,8 @@ class modulesHelper:
                     if helper.__name__.rsplit(".", 1)[-1] == module
                 ]
             for helper in helpers:
-                print_message(f"Checking updates of module '{helper.__name__.split('.')[-1]}'.")
                 helper_name = helper.__name__.split('.')[-1]
+                print_message(f"Checking updates of module '{helper_name}'.")
                 if helper_name == 'modules':
                     continue
                 helper_current_version = helper.__module_version__
@@ -639,7 +594,7 @@ class modulesHelper:
                     continue
                 helper_releases_data = retrieve_json(helper_releases)
                 if not isinstance(helper_releases_data, list):
-                    print_message(f"Failed to retrieve updates of module '{helper.__name__.split('.')[-1]}'.", WARNING)
+                    print_message(f"Failed to retrieve updates of module '{helper_name}'.", WARNING)
                     continue
                 helper_last_release = helper_releases_data[0]
                 helper_remote_download_link = helper_last_release.get('tarball_url')
@@ -649,24 +604,14 @@ class modulesHelper:
                     update_data = {'name': helper_name, 'current_version': helper_current_version, 'remote_version': helper_remote_version} if pretty else {'name': helper_name, 'current_version': helper_current_version, 'remote_version': helper_remote_version, 'remote_download_link': helper_remote_download_link, 'changelog': helper_remote_changelog}
                     helpers_for_update.append(update_data)
             if pretty:
-                return pd.DataFrame(helpers_for_update).to_string(index=False, justify='left') if helpers_for_update else "All modules are up-to-date."
+                return pd.DataFrame(helpers_for_update).to_string(index=False, justify='left') if helpers_for_update else lang.get()
             else:
                 return helpers_for_update if helpers_for_update else []
 
         def install(self, module: str = None, skip_check: bool = False):
-            """
-            **Method updates modules or specified module.**
-            ```
-            Usage:
-                1. Without specified module name:
-                    modules update install
-                2. With specified module name:
-                    modules update install --module module_name
-            ```
-            """
             modules_for_update = self.check(pretty=False)
             if not modules_for_update:
-                return "Nothing to install."
+                return lang.get(key='nothing')
             if not module:
                 if modules_for_update:
                     selected_for_install = print_choices([module_data['name'] for module_data in modules_for_update], multiple_choice=True, all_btn=True, exit_btn=True)
@@ -685,5 +630,145 @@ class modulesHelper:
                     for module_data in modules_for_update:
                         if module == module_data['name']:
                             return install_module(module, module_data['remote_download_link'], skip_check=skip_check)
-                    return f"Module '{module}' is up-to-date."
+                    return lang.get(key='up_to_date', module=module)
 
+    class language:
+        def __init__(self, settings: dict = None, helpers: list = None):
+            self.settings = settings
+            self.helpers = helpers
+            self.basic_languages_map = {
+                'en': 'en_US',
+                'ru': 'ru_RU'
+            }
+
+        def translate(self, module: str, language: str, provider: str = 'google', force: bool = False):
+            def translate_value(value, translator):
+                if isinstance(value, dict):
+                    return {
+                        key: translate_value(nested_value, translator)
+                        for key, nested_value in value.items()
+                    }
+
+                if isinstance(value, str):
+                    print_message(f"Translating value '{value}'...")
+                    translated = translator.translate(value)
+                    if translated and 'Error 500 (Server Error)' not in translated:
+                        return translated.replace('»', "'").replace('«', "'")
+                    else:
+                        print_message(f"There war error when trying to translate value '{value}'", ERROR)
+
+                return value
+
+
+            def merge_dicts(target, source):
+                for key, value in source.items():
+                    if (
+                        key in target
+                        and isinstance(target[key], dict)
+                        and isinstance(value, dict)
+                    ):
+                        merge_dicts(target[key], value)
+                    else:
+                        target[key] = value
+
+            def translate_file(item, translator):
+                file_name, data = item
+
+                if file_name == "metadata" or not isinstance(data, dict):
+                    return file_name, None
+                print_message(f"Translating '{file_name}'...")
+                return file_name, translate_value(data, translator)
+
+            # https://github.com/yaml/pyyaml.org/issues/22
+            class CustomDumper(yaml.Dumper):
+                def represent_mapping(self, tag, mapping, flow_style=None):
+                    value = []
+                    node = yaml.nodes.MappingNode(tag, value, flow_style=flow_style)
+                    if self.alias_key is not None:
+                        self.represented_objects[self.alias_key] = node
+                    best_style = True
+                    if hasattr(mapping, 'items'):
+                        mapping = list(mapping.items())
+                        if self.sort_keys:
+                            try:
+                                mapping = sorted(mapping)
+                            except TypeError:
+                                pass
+                    for item_key, item_value in mapping:
+                        # Represent the key without quotes
+                        node_key = self.represent_data(item_key)
+                        # Represent the value with double quotes if it's a string and with | if it contains \n
+                        if isinstance(item_value, str):
+                            if item_value.count('\n') > 0:
+                                node_value = self.represent_scalar('tag:yaml.org,2002:str', item_value, style='|')
+                            else:
+                                node_value = self.represent_scalar('tag:yaml.org,2002:str', item_value, style='"')
+                        else:
+                            node_value = self.represent_data(item_value)
+                        if not (isinstance(node_key, yaml.nodes.ScalarNode) and not node_key.style):
+                            best_style = False
+                        if not (isinstance(node_value, yaml.nodes.ScalarNode) and not node_value.style):
+                            best_style = False
+                        value.append((node_key, node_value))
+                    if flow_style is None:
+                        if self.default_flow_style is not None:
+                            node.flow_style = self.default_flow_style
+                        else:
+                            node.flow_style = best_style
+                    return node
+
+            translators = {
+                'yandex': YandexTranslator,
+                'google': GoogleTranslator,
+                'mymemory': MyMemoryTranslator,
+                'microsoft': MicrosoftTranslator,
+                'chatgpt': ChatGptTranslator
+            }
+            selected_lang = self.basic_languages_map.get(language, f'{language}_{language.upper()}')
+            lang_path = Path(HELPERS_DIR) / f'{module}/lang'
+            lang_file = lang_path / f'{selected_lang}.lng'
+            os.makedirs(lang_path, mode=0o755, exist_ok=True)
+            mode = None
+            if lang_file.exists() and force:
+                mode = 'w'
+            if not lang_file.exists():
+                mode = 'x'
+            if mode is None:
+                return lang.get(key='exists', module=module, path=lang_file)
+            translator = translators.get(provider, GoogleTranslator)(source='auto', target=language)
+            physical_cores = psutil.cpu_count(logical=False)
+            logical_cores = psutil.cpu_count(logical=True)
+            threads_per_core = int(logical_cores / physical_cores)
+            minimal_threads = physical_cores * threads_per_core
+            workers = min(minimal_threads, max(1, (os.cpu_count() or 1) + 4))
+            if module:
+                for helper in self.helpers:
+                    if helper.__name__.split('.')[-1] == module:
+                        stop_signal = threading.Event()
+                        spinner_thread = threading.Thread(target=spinning_loader, args=(stop_signal,), daemon=True)
+                        spinner_thread.start()
+                        new_lang_obj = copy(lang)
+                        new_lang_obj.lang = "en_US"
+                        new_lang_obj.caller = Path(helper.__file__)
+                        new_lang_obj.lang_path = new_lang_obj._find_language_file()
+                        new_lang_obj.lang_data = new_lang_obj._load_language_data()
+                        new_lang_data = {'metadata': new_lang_obj.lang_data['metadata']}
+                        with ThreadPoolExecutor(max_workers=workers) as executor:
+                            translated_files = executor.map(
+                                lambda item: translate_file(item, translator),
+                                new_lang_obj.lang_data.items(),
+                            )
+                            for file_name, translated_data in translated_files:
+                                if translated_data is None:
+                                    continue
+                                new_lang_data.setdefault(file_name, {})
+                                merge_dicts(new_lang_data[file_name], translated_data)
+                        stop_signal.set()
+                        spinner_thread.join()
+                        with open(lang_file, mode, newline='\n', encoding='utf-8') as lang_file_stream:
+                            yaml_data = yaml.dump(new_lang_data, Dumper=CustomDumper, default_flow_style=False, allow_unicode=True, explicit_start=True, sort_keys=False, width=1000)
+                            lang_file_stream.seek(0)
+                            # By default dumper represents multiline string with |-
+                            lang_file_stream.write(yaml_data.replace(': |-', ': |'))
+                            lang_file_stream.truncate()
+                        return lang.get(key='created', module=module, path=lang_file)

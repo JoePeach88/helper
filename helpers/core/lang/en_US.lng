@@ -1,0 +1,136 @@
+---
+metadata:
+  author: JoePeach88
+  version: 1.0.0
+  lang: English
+
+helpers\core\__init__.py:
+  coreHelper: "**Module to work with helper core.**"
+  coreHelper.selfcheck:
+    description: |
+      **Method checks that all required parameters set for correct work.**
+      ```
+      Usage:
+          core selfcheck
+      ```
+    items: 
+      connected: |
+        GitHub connection status: Established. Authenticated as {user}.
+        GitHub token set: {status}
+      not_connected: |
+        GitHub connection status: Not connected.
+        GitHub token set: {status}
+  coreHelper.config: "**Module to manipulate helper config parameters.**"
+  coreHelper.config.get:
+    description: |
+      **Method retrieves config data.**
+      ```
+      Usage:
+          core config get <section> <option>
+      ```
+    items: |
+      Config data is:
+          Section: {section}
+          Option: {option}
+          Value: {value}
+  coreHelper.config.set:
+    description: |
+      **Method sets config data.**
+      ```
+      Usage:
+          1. Simple value set:
+              core config set <section> <option> <value>
+          2. Value set based on current system:
+              core config set <section> <option> <value> --system-based
+      ```
+    items:
+      token: |
+        Hello {user}! You successfully set token for GitHub.
+        
+        The following values ​​are set:
+            Section: {section}
+            Option: {option}
+            Value: {value}
+      set: |
+        The following values ​​are set:
+            Section: {section}
+            Option: {option}
+            Value: {value}
+  coreHelper.config.rm:
+    description: |
+      **Method removes specified section or option.**
+      ```
+      Usage:
+          core config rm <section> <option>
+      ```
+    items: |
+      The following values ​​are removed:
+          Section: {section}
+          Option: {option}
+  coreHelper.config.ls:
+    description: |
+      **Method displays all config data.**
+      ```
+      Usage:
+          core config ls
+      ```
+    items: null
+  coreHelper.update: "**Module updates helper core.**"
+  coreHelper.update.check:
+    description: |
+      **Method checks updates for helper core.**
+      ```
+      Usage:
+          core update check
+      ```
+    items:
+      failed: "Failed to retrieve core updates."
+      up_to_date: "All modules are up-to-date."
+  coreHelper.update.install:
+    description: |
+      **Method updates helper core.**
+      ```
+      Usage:
+          core update install
+      ```
+    items: "Nothing to install."
+  coreHelper.logging: "**Module to manipulate with logs.**"
+  coreHelper.logging.ls:
+    description: |
+      **Method displays logs.**
+      ```
+      Usage:
+          core logging ls
+      ```
+    items: | 
+      Available logs ({logs_len}):
+      {logs}
+  coreHelper.logging.view:
+    description: |
+      **Method displays log content.**
+      ```
+      Usage:
+          core logging view <log>
+      ```
+    items: null
+  coreHelper.logging.rm:
+    description: |
+      **Method removes log file.**
+      ```
+      Usage:
+          core logging rm <log_file>
+      ```
+    items: "Log file '{log_file}' removed."
+  coreHelper.logging.flush:
+    description: |
+      **Method removes all log files.**
+      ```
+      Usage:
+          core logging flush
+      ```
+    items:
+      removed: "All logs removed."
+      empty: "Nothing to remove."
+
+helpers\core\utils.py:
+  install_update: "Core update version {version} successfully installed."

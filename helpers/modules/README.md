@@ -1,6 +1,6 @@
 # modules
 
-**Module to work with helper modules.**
+None
 
 ## Methods list
 
@@ -9,6 +9,8 @@
 - [enable](#enable)
 - [info](#info)
 - [install](#install)
+- [**language**](#language) [module]
+- [translate](#translate)
 - [ls](#ls)
 - [pack](#pack)
 - [push](#push)
@@ -17,7 +19,9 @@
 - [renderreq](#renderreq)
 - [rendertemplate](#rendertemplate)
 - [rendertests](#rendertests)
-- [test](#test)
+- [**test**](#test) [module]
+- [start](#start)
+- [viewreport](#viewreport)
 - [uninstall](#uninstall)
 - [**update**](#update) [module]
 - [changes](#changes)
@@ -34,7 +38,7 @@ helper modules install modules --location None
 
 **Author: [JoePeach88](https://github.com/JoePeach88)**
 
-**Version: 1.2.0**
+**Version: 1.3.0**
 
 **Supported platforms:**
 
@@ -84,6 +88,27 @@ Usage:
 modules install <module_name> --location <link or path>
 ```
 
+## language
+
+**Module to work with language files.**
+
+### translate
+
+**Method translates en_US localization to different languages.**
+> NOTE: After translation, you need to manually check translate correctness.
+```
+Usage:
+1. Default usage:modules language translate <module_name> --language <language_code>
+2. With custom provider:
+modules language translate <module_name> --language <language_code> --provider <provider_name>
+```
+Available providers:
+* `yandex`
+* `google` [default]
+* `mymemory`
+* `microsoft`
+* `chatgpt`
+
 ### ls
 
 **Method displays all available modules.**
@@ -124,7 +149,7 @@ modules renderhash <module_name>
 
 ### rendermd
 
-**Module renders README.md.**
+**Method renders README.md.**
 ```
 Usage:
 modules rendermd <module_name>
@@ -132,7 +157,7 @@ modules rendermd <module_name>
 
 ### renderreq
 
-**Module renders requirements.txt.**
+**Method renders requirements.txt.**
 ```
 Usage:
 modules renderreq <module_name>
@@ -154,15 +179,30 @@ Usage:
 modules rendertests <module>
 ```
 
-### test
+## test
+
+**Module to work with module`s tests.**
+
+### start
 
 **Method runs tests for specified module.**
 ```
 Usage:
 1. Only test, without reports:
-modules test <module>
+modules test start <module>
 2. Test with reports rendering:
-module test <module> --report
+module test start <module> --report
+```
+
+### viewreport
+
+**Method to view tests results.**
+```
+Usage:
+1. View summary report:
+modules test viewreport <module>
+2. View specified report:
+modules test viewreport <module> --report <report>
 ```
 
 ### uninstall

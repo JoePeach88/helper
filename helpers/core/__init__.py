@@ -3,7 +3,7 @@ import glob
 import os
 from pathlib import Path
 from env import __version__, __release__, LOGS_PATH
-from helpers import mask, print_message, print_choices, print_choice, render_code, INFO, WARNING, ERROR, loader, SYSTEM_PLATFORM, get_system_based_value, spinning_loader
+from helpers import mask, print_message, print_choices, print_choice, render_code, INFO, WARNING, ERROR, loader, SYSTEM_PLATFORM, get_system_based_value, spinning_loader, lang, BASE_LIBRARY
 from helpers.core.utils import install_update, retrieve_json, test_github_connection
 from helpers.modules import github_url_to_releases_api
 
@@ -22,59 +22,29 @@ __methods_static_aliases__ = {}
 
 
 class coreHelper:
-    """
-    **Module to work with helper core.**
-    """
     def __init__(self, settings: dict):
         self.settings = settings.get('core')
 
         # Subclasses
         self.config = self.config(dict(loader.config), settings.get('core:config', {}))
         self.update = self.update(settings.get('core:update', {}))
-        self.logs = self.logs(settings.get('core:logging', {}))
+        self.logging = self.logging(settings.get('core:logging', {}))
 
     def selfcheck(self, pretty: bool = True):
-        """
-        **Method checks that all required parameters set for correct work.**
-        ```
-        Usage:
-            core selfcheck
-        ```
-        """
         config = self.config
         github_connection_status, user = test_github_connection()
         gh_token = True if config.get('core:remote', 'gh_api_token') else False
-        return f"GitHub connection status: {f'Established. Authenticated as {user}.' if github_connection_status else 'Not connected'}\nGitHub token set: {'Yes' if gh_token else 'No'}" if pretty else {'github_connection_status': github_connection_status, 'gh_token_set': gh_token}
+        return lang.get(key=('connected' if github_connection_status else 'not_connected'), status=BASE_LIBRARY['yes' if gh_token else 'no'], user=user) if pretty else {'github_connection_status': github_connection_status, 'gh_token_set': gh_token}
 
     class config:
-        """
-        **Module to manipulate helper config parameters.**
-        """
         def __init__(self, global_settings: dict, settings: dict):
             self.global_settings = global_settings
             self.settings = settings
 
         def get(self, section: str, option: str):
-            """
-            **Method retrieves config data.**
-            ```
-            Usage:
-                core config get <section> <option>
-            ```
-            """
-            return f"Config data is:\n  Section: {section}\n  Option: {option}\n  Value: {loader.get(section, option)}"
+            return lang.get(section=section, option=option, value=loader.get(section, option))
         
         def set(self, section: str, option: str, value: str, system_based: bool = False):
-            """
-            **Method sets config data.**
-            ```
-            Usage:
-                1. Simple value set:
-                    core config set <section> <option> <value>
-                2. Value set based on current system:
-                    core config set <section> <option> <value> --system-based
-            ```
-            """
             if system_based:
                 current_value = loader.get(section, option)
                 value = f'{SYSTEM_PLATFORM}({value})'
@@ -88,27 +58,17 @@ class coreHelper:
                     else:
                         value = current_value
             loader.set(section, option, value)
-            return f"The following values ​​are set:\n  Section: {section}\n  Option: {option}\n  Value: {value}"
+            if section == 'core:remote' and option == 'gh_api_token':
+                connection_test, user = test_github_connection()
+                if connection_test:
+                    return lang.get(key='token', user=user, section=section, option=option, value=value)
+            return lang.get(key='set', user=user, section=section, option=option, value=value)
 
         def rm(self, section: str, option: str = None):
-            """
-            **Method removes specified section or option.**
-            ```
-            Usage:
-                core config rm <section> <option>
-            ```
-            """
             loader.remove(section, option)
-            return f"The following values ​​are removed:\n  Section: {section}\n  Option: {option if option else ''}"
+            return lang.get(section=section, option=option if option else '')
 
         def ls(self, pretty: bool = True):
-            """
-            **Method displays all config data.**
-            ```
-            Usage:
-                core config ls
-            ```
-            """
             if pretty:
                 for section_name, section_proxy in self.global_settings.items():
                     if section_name != 'DEFAULT':
@@ -119,46 +79,37 @@ class coreHelper:
                 return {s:dict(self.global_settings.items(s)) for s in self.global_settings.sections()}
 
     class update:
-        """
-        **Module updates helper core.**
-        """
         def __init__(self, settings: dict):
             self.settings = settings
             self.core_url = github_url_to_releases_api('https://github.com/JoePeach88/helper')
 
         def check(self, pretty: bool = True, dev: bool = False):
-            """
-            **Method checks updates for helper core.**
-            ```
-            Usage:
-                core update check
-            ```
-            """
             dev = self.settings.get('enable_dev_updates', 'False') == 'True' or dev
             if not self.core_url:
-                return [] if not pretty else "Failed to retrieve core updates."
+                return [] if not pretty else lang.get(key='failed')
 
             release_data = retrieve_json(self.core_url)
             if not isinstance(release_data, list) or not release_data:
                 print_message("Failed to retrieve core updates.", WARNING)
-                return "Failed to retrieve core updates." if pretty else []
+                return lang.get(key='failed') if pretty else []
 
             core_for_update = []
             core_remote_download_link, core_remote_version, core_remote_changelog = None, None, None
 
             for core_last_release in release_data:
                 is_dev_release = 'dev' in core_last_release['tag_name']
-                if (is_dev_release and dev) or (not is_dev_release and not dev):
-                    core_remote_download_link = core_last_release.get('tarball_url')
-                    core_remote_version = core_last_release['tag_name'].split('-')[0]
-                    core_remote_changelog = core_last_release.get('body')
-                    break
+                core_remote_download_link = core_last_release.get('tarball_url')
+                core_remote_version = core_last_release['tag_name'].split('-')[0]
+                core_remote_changelog = core_last_release.get('body')
+                print_message(f"Remote version is: {core_remote_version} ({'dev' if is_dev_release else 'stable'}), current version is: {__version__} ({__release__}).")
+                print_message(f"Download link is: {core_remote_download_link}.")
+                break
 
-            if core_remote_version and (__version__ < core_remote_version or (__version__ < core_remote_version and 'dev' in core_last_release['tag_name'])):
+            if core_remote_version and (__version__ < core_remote_version or (__version__ <= core_remote_version and 'dev' in core_last_release['tag_name'])):
                 update_data = {
                     'name': 'core',
                     'current_version': __version__,
-                    'remote_version': core_remote_version + ' (dev)' if is_dev_release else '',
+                    'remote_version': core_remote_version + (' (dev)' if is_dev_release else ''),
                 }
                 if not pretty:
                     update_data.update({
@@ -168,17 +119,10 @@ class coreHelper:
                 core_for_update.append(update_data)
 
             if pretty:
-                return pd.DataFrame(core_for_update).to_string(index=False, justify='left') if core_for_update else "All modules are up-to-date."
+                return pd.DataFrame(core_for_update).to_string(index=False, justify='left') if core_for_update else lang.get(key='up_to_date')
             return core_for_update if core_for_update else []
 
         def install(self, dev: bool = False):
-            """
-            **Method updates helper core.**
-            ```
-            Usage:
-                core update install
-            ```
-            """
             core_for_update = self.check(pretty=False, dev=dev)
             if not core_for_update:
                 return "Nothing to install."
@@ -186,36 +130,19 @@ class coreHelper:
                 core_for_update = core_for_update[0]
                 return install_update(core_for_update['remote_version'], core_for_update['remote_download_link'])
 
-    class logs:
-        """
-        **Module to manipulate with logs.**
-        """
+    class logging:
         def __init__(self, settings: dict):
             self.settings = settings
 
         def ls(self, pretty: bool = True):
-            """
-            **Method displays logs.**
-            ```
-            Usage:
-                core logs ls
-            ```
-            """
             logs = []
             refactored_logs = []
             logs.extend(glob.glob(os.path.join(Path(LOGS_PATH), "*.log")))
             for log in logs:
                 refactored_logs.append(Path(log).stem)
-            return f'Available logs ({len(refactored_logs)}):\n' + '\n'.join(refactored_logs) if pretty else refactored_logs
+            return lang.get(logs_len=len(refactored_logs), logs='\n'.join(refactored_logs)) if pretty else refactored_logs
 
         def view(self, log: str = None):
-            """
-            **Method displays log content.**
-            ```
-            Usage:
-                core logs view <log>
-            ```
-            """
             if not log:
                 logs_list = self.ls(pretty=False)
                 log = print_choices(logs_list, exit_btn=True)
@@ -232,13 +159,6 @@ class coreHelper:
 
 
         def rm(self, log: str = None):
-            """
-            **Method removes log file.**
-            ```
-            Usage:
-                core logs rm
-            ```
-            """
             if not log:
                 logs_list = self.ls(pretty=False)
                 log = print_choices(logs_list, exit_btn=True)
@@ -251,19 +171,14 @@ class coreHelper:
                         log = None
             if log:
                 os.remove(log)
-                return f"Log file '{Path(log).as_posix()}' removed."
+                return lang.get(log_file=Path(log).as_posix())
 
         def flush(self):
-            """
-            **Method removes all log files.**
-            ```
-            Usage:
-                core logs flush
-            ```
-            """
             logs_list = self.ls(pretty=False)
             if logs_list:
                 for log in logs_list:
                     log = f"{LOGS_PATH}/{log}.log"
                     os.remove(log)
-                return 'All logs removed.'
+                return lang.get(key='removed')
+            else:
+                return lang.get(key='empty')

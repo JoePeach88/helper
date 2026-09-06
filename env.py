@@ -4,15 +4,15 @@ import platform
 import ctypes
 import re
 import locale
-import yaml
 from pathlib import Path
 from colorama import Fore
 from typing import Any, Optional
+from localization import lang
 
 
-__version__ = '1.2.0'
-__version_name__ = 'summer'
-__release__ = 'stable'
+__version__ = '1.3.0'
+__version_name__ = 'autumn'
+__release__ = 'dev'
 __product_name__ = 'helper'
 __required_python__ = (3, 7)
 
@@ -33,13 +33,6 @@ def get_system_based_value(string: str, default: str = None, return_default: boo
         return default
     else:
         return string
-
-
-def get_localization(locale_code: str, locales_path: str):
-    locale_full_path = Path(f'{locales_path}/{locale_code}.yml')
-    if locale_full_path.exists():
-        with open(locale_full_path, 'r', encoding='utf-8') as locale_file:
-            return yaml.safe_load(locale_file.read())
 
 
 def is_admin():
@@ -102,20 +95,47 @@ class ConfigLoader:
         with open(self.config_path, 'w+', encoding='utf-8') as configfile: 
             self.config.write(configfile)
 
+HELPER_HOME = Path.home() / '.helper'
+os.makedirs(HELPER_HOME, mode=0o755, exist_ok=True)
 config_file = Path(f'{Path(__file__).parent}/{__product_name__}.cfg').absolute()
-loader = ConfigLoader(config_file)
+if not config_file.exists():
+    config_file = HELPER_HOME / 'config'
+    if not config_file.exists():
+        with open(config_file, 'x', encoding='utf-8') as config:
+            default_config = f"""[core:ui]
+language = en_US
 
-# Colors
-GREEN = Fore.GREEN
-YELLOW = Fore.YELLOW
-RED = Fore.RED
-BLUE = Fore.BLUE
-RESET = Fore.RESET
+[core:remote]
+gh_api_token = 
+pip_proxy = 
+pip_break_system_packages = False
+update_check = False
+
+[core:optimization]
+less_lines = 20
+modules_filter = ^.*.$
+hrdrm_enabled = False
+gc_enabled = True
+md_return_output = False
+
+[core:logging]
+logs_path = {Path(Path(__file__).parent / 'logs').as_posix()}
+logs_levels = ERROR
+debug = False
+emoji_enabled = True
+colored_output = True
+measure_time = False
+"""
+            config.write(default_config)
+loader = ConfigLoader(config_file)
 
 # Core #
 LOCALE, ENCODING = locale.getdefaultlocale()
 IS_ADMIN = is_admin()
 SYSTEM_PLATFORM = platform.system()
+LANGUAGE = get_system_based_value(loader.get('core:ui', 'language', LOCALE))
+INPUT_STYLE = get_system_based_value(loader.get('core:ui', 'input', '-->'))
+MORE_STYLE = get_system_based_value(loader.get('core:ui', 'more', '---MORE---'))
 
 # Remote
 GITHUB_TOKEN = get_system_based_value(loader.get('core:remote', 'gh_api_token', ''))
@@ -126,7 +146,7 @@ UPDATE_CHECK = get_system_based_value(loader.get('core:remote', 'update_check', 
 # Optimization
 LESS_LINES = int(get_system_based_value(loader.get('core:optimization', 'less_lines', '20')))
 UNPACK_FILE_FILTER = get_system_based_value(loader.get('core:optimization', 'modules_filter', r'^.*.$'))
-HRDRM_ENABLED = get_system_based_value(loader.get('core:optimization', 'hrdrm_enabled', 'True')) == 'True'
+HRDRM_ENABLED = get_system_based_value(loader.get('core:optimization', 'hrdrm_enabled', 'False')) == 'True'
 GC_ENABLED = get_system_based_value(loader.get('core:optimization', 'gc_enabled', 'True')) == 'True'
 MD_RETURN_OUTPUT = get_system_based_value(loader.get('core:optimization', 'md_return_output', 'False')) == 'True'
 
@@ -135,4 +155,23 @@ LOGS_PATH = Path(get_system_based_value(loader.get('core:logging', 'logs_path', 
 LOGS_LEVELS = loader.get('core:logging', 'logs_levels', 'ERROR', split=True)
 DEBUG = get_system_based_value(loader.get('core:logging', 'debug', 'False')) == 'True'
 EMOJI_ENABLED = get_system_based_value(loader.get('core:logging', 'emoji_enabled', 'True')) == 'True'
+COLORED_OUTPUT = get_system_based_value(loader.get('core:logging', 'colored_output', 'True')) == 'True'
+MEASURE_TIME = get_system_based_value(loader.get('core:logging', 'measure_time', 'False')) == 'True'
 # End Core #
+
+# Colors
+if COLORED_OUTPUT:
+    GREEN = Fore.GREEN
+    YELLOW = Fore.YELLOW
+    RED = Fore.RED
+    BLUE = Fore.BLUE
+    RESET = Fore.RESET
+else:
+    GREEN = Fore.RESET
+    YELLOW = Fore.RESET
+    RED = Fore.RESET
+    BLUE = Fore.RESET
+    RESET = Fore.RESET
+
+# Localization
+lang = lang(LANGUAGE, DEBUG, COLORED_OUTPUT)

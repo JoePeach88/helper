@@ -11,7 +11,7 @@ import sys
 from urllib.parse import urlparse
 from pathlib import Path
 from env import UNPACK_FILE_FILTER
-from helpers import print_message, print_choice, WARNING, ERROR, HELPERS_DIR, install_requirements, get_system_based_value
+from helpers import print_message, print_choice, WARNING, ERROR, HELPERS_DIR, BASE_LIBRARY, install_requirements, get_system_based_value, lang
 from helpers.core.utils import download_file, retrieve_json, github_url_to_releases_api, github_repo_to_ssh, test_github_connection
 
 
@@ -43,19 +43,23 @@ def _run_scenario(phase, scenario, module_name, scenario_type):
         return True
 
     print_message(f"Executing {phase}-{scenario_type}ation scenarios for module '{module_name}'...")
-
+    status = True
     if not _run_commands(scenario.get("scripts", []), phase, "script", scenario_type):
-        return False
+        status = False
+    else:
+        status = True
     if not _run_commands(scenario.get("inline", []), phase, "inline", scenario_type):
-        return False
+        status = False
+    else:
+        status = True
 
-    return True
+    return status
 
 
 def format_bytes(size_bytes):
     if size_bytes == 0:
         return "0B"
-    units = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    units = BASE_LIBRARY['units']
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
@@ -103,8 +107,10 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
     install_dest = Path(f'{HELPERS_DIR}/{module_name}').absolute()
     changelog_path = install_dest / 'CHANGELOG.md'
     if install_dest.exists() and not force:
-        print_message(f"Module '{module_name}' already installed.", WARNING, force=True)
-        return
+        print_message(f"Module '{module_name}' already installed.", WARNING)
+        return lang.get(key='exists', module=module_name)
+    elif install_dest.exists() and force:
+        uninstall_module(module_name, force=True)
 
     print_message(f"Working with link type '{link_type}'.")
 
@@ -117,8 +123,8 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
             if github_module_link:
                 helper_releases_data = retrieve_json(github_module_link)
                 if not isinstance(helper_releases_data, list):
-                    print_message(f"Failed to retrieve updates of module '{module_name}'.", WARNING, force=True)
-                    return
+                    print_message(f"Failed to retrieve updates of module '{module_name}'.", WARNING)
+                    return lang.get(key='failed', module=module_name)
                 if not module_version:
                     helper_last_release = helper_releases_data[0]
                 else:
@@ -133,7 +139,7 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
                     module_link = helper_remote_download_link
                 else:
                     print_message('Source not found, aborting.', ERROR)
-                    return f"Source for module {module_name} not found."
+                    return lang.get(key='not_found', module=module_name)
             else:
                 print_message("Link already converted to GitHub API or link not GitHub API (maybe straight link to source), trying to download source.", WARNING)
             download_file(module_link, archive_path)
@@ -179,7 +185,7 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
                 print_message(f"File 'SHA256' not found or some file has incorrect sha256 sum, it means module can be infected, removing it...", WARNING, force=True)
                 uninstall_module(module_name, force=True)
                 print_message(f"If you want to install module without checking sha256 sum, you need to install module with --skip-check flag.", WARNING, force=True)
-                return f"Module '{module_name}' not installed."
+                return lang.get(key='not_installed', module=module_name)
         if helper_changelog:
             with open(changelog_path, 'w' if changelog_path.exists() else 'x', newline="\n", encoding='utf-8') as changelog_file:
                 changelog_file.write(helper_changelog)
@@ -200,7 +206,7 @@ def install_module(module_name: str, module_link: str, module_version: str = Non
             install_requirements(module_name, req_file)
         if scenario_post:
             _run_scenario('post', scenario_post, module_name, 'install')
-    return f"Module '{module_name}' installed successfully."
+    return lang.get(key='installed', module=module_name)
 
 
 def uninstall_module(module_name: str, force: bool = False):
@@ -209,11 +215,11 @@ def uninstall_module(module_name: str, force: bool = False):
     scenario_pre = None
     scenario_post = None
     if not module_path.exists():
-        return f"Module '{module_name}' not found."
+        return lang.get(key='not_found', module=module_name)
 
     if not force:
-        if not print_choice(f"Do you really want to remove module '{module_name}'?"):
-            return f"Module '{module_name}' uninstall cancelled."
+        if not print_choice(lang.get(key='choice', module=module_name)):
+            return lang.get(key='cancelled', module=module_name)
 
     if uninstall_scenario.exists():
         print_message(f"Reading uninstallation scenarios for module '{module_name}'...")
@@ -227,14 +233,14 @@ def uninstall_module(module_name: str, force: bool = False):
     shutil.rmtree(module_path)
     if scenario_post:
         _run_scenario('post', scenario_post, module_name, 'uninstall')
-    return f"Module '{module_name}' uninstalled."
+    return lang.get(key='uninstalled', module=module_name)
 
 
 def pack_module(module_name: str, module_version: str, location: str):
     module_path = Path(HELPERS_DIR, module_name).absolute()
 
     if not module_path.exists():
-        return f"Module '{module_name}' not found."
+        return lang.get(key='not_found', module=module_name)
 
     if location:
         location = Path(location).absolute()
@@ -246,7 +252,7 @@ def pack_module(module_name: str, module_version: str, location: str):
 
     with tarfile.open(archive, mode="w:gz") as tar:
         tar.add(module_path, arcname=f'{module_name}-{module_version}')
-    return f"Module packed to '{archive}'."
+    return lang.get(key='packed', archive=archive)
 
 def determine_type(input_string):
     parsed = urlparse(input_string)

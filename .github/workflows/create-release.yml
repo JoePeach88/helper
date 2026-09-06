@@ -37,42 +37,60 @@ jobs:
       - name: "[Step 5] Check Release Type"
         id: check_type
         run: |
-          if [[ "${{ github.ref_name }}" == *"-dev"* ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          if [[ "$GITHUB_REF_NAME" == *"-dev"* ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "release_suffix=(dev)" >> "$GITHUB_OUTPUT"
+            echo "body_suffix=" >> "$GITHUB_OUTPUT"
           else
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "release_suffix=(stable)" >> "$GITHUB_OUTPUT"
+            echo "body_suffix=-stable" >> "$GITHUB_OUTPUT"
           fi
 
       - name: "[Step 6] Create Release"
-        id: create_release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: helper v.${{ steps.build.outputs.release_name }} ${{ steps.check_type.outputs.is_prerelease == 'true' && '(dev)' || '(stable)' }}
-          body_path: ./changelogs/${{ github.ref_name }}${{ steps.check_type.outputs.is_prerelease == 'true' && '' || '-stable' }}.md
-          draft: false
-          prerelease: ${{ steps.check_type.outputs.is_prerelease == 'true' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NAME: helper v.${{ steps.build.outputs.release_name }} ${{ steps.check_type.outputs.release_suffix }}
+          IS_PRERELEASE: ${{ steps.check_type.outputs.is_prerelease }}
+        run: |
+          args=(
+            "$GITHUB_REF_NAME"
+            --title "$RELEASE_NAME"
+            --generate-notes
+          )
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+          gh release create "${args[@]}"
 
-      - name: "[Step 7] Upload Win Installer"
-        id: upload-win-installer
-        uses: actions/upload-release-asset@v1
+      - name: "[Step 7] Add Changelog to Release"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./setup.ps1
-          asset_name: setup.ps1
-          asset_content_type: application/octet-stream
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BODY_SUFFIX: ${{ steps.check_type.outputs.body_suffix }}
+        run: |
+          changelog="./changelogs/${GITHUB_REF_NAME}${BODY_SUFFIX}.md"
+          if [ ! -f "$changelog" ]; then
+            echo "Changelog not found: $changelog"
+            exit 1
+          fi
+          gh release edit "$GITHUB_REF_NAME" --notes-file "$changelog"
 
-      - name: "[Step 8] Upload Unix Installer"
-        id: upload-unix-installer
-        uses: actions/upload-release-asset@v1
+      - name: "[Step 8] Upload Installers"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          shopt -s nullglob
+          files=(setup*)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No installer files matching setup* were found."
+            exit 1
+          fi
+          gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
+
+      - name: "[Step 9] Delete older releases"
+        uses: dev-drprasad/delete-older-releases@v0.3.4
+        with:
+          keep_latest: 2
+          delete_tags: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./setup.sh
-          asset_name: setup.sh
-          asset_content_type: application/octet-stream

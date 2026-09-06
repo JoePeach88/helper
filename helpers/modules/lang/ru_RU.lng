@@ -1,0 +1,270 @@
+---
+metadata:
+  author: "JoePeach88"
+  status: "stable"
+  version: "1.0.0"
+  lang: "Русский"
+
+helpers\modules\__init__.py:
+  modulesHelper: "Модуль '{module}' уже установлен."
+  modulesHelper.ls:
+    description: |
+      **Метод отображает все доступные модули.**
+      ```
+      Использование:
+          modules ls
+      ```
+    items: |
+      Доступные модули ({helpers_len}):
+      {helpers_list}
+  modulesHelper.info:
+    description: |
+      **Метод отображает информацию об установленном модуле.**
+      ```
+      Использование:
+          modules info --module <имя_модуля>
+      ```
+    items:
+      not_found: "Модуль с именем '{module}' не найден."
+      info: |
+        Имя: {name}
+        Автор: {author}
+        Версия: {version}
+        Встроенный: {builtin}
+        Ссылка: {link}
+        Путь: {path}
+        Языки: {languages}
+        Совместимость: {compatibility}
+        Размер: {size}
+  modulesHelper.disable:
+    description: |
+      **Метод отключает модуль.**
+      ```
+      Использование:
+          modules disable --module <имя_модуля>
+      ```
+    items:
+      disabled: "Модуль '{module}' отключен."
+      builtin: "Модуль '{module}' встроен."
+      not_found: "Модуль '{module}' не найден."
+  modulesHelper.enable:
+    description: |
+      **Метод включает модуль.**
+      ```
+      Использование:
+          modules enable --module <имя_модуля>
+      ```
+    items:
+      disabled: "Модуль '{module}' включен."
+      builtin: "Модуль '{module}' встроен."
+      not_found: "Модуль '{module}' не найден."
+  modulesHelper.install:
+    description: |
+      **Метод устанавливает указанный модуль по ссылке или по пути.**
+      ```
+      Использование:
+          modules install install <имя_модуля> --location <ссылка или путь>
+      ```
+    items: "Модуль '{module}' встроен."
+  modulesHelper.uninstall:
+    description: |
+      **Метод удаляет указанный модуль.**
+      ```
+      Использование:
+          modules uninstall <имя_модуля>
+      ```
+    items: "Модуль '{module}' встроен."
+  modulesHelper.create:
+    description: |
+      **Метод создает пустой модуль из шаблона для разработки.**
+      ```
+      Использование:
+          modules create <имя_модуля> --name Имя_модуля --author Автор --версия 1.0.0 --systems Linux,Windows,Darwin
+      ```
+    items:
+      builtin: "Модуль '{module}' встроен."
+      created: "Модуль '{module}' создан."
+      exists: "Модуль '{module}' уже существует."
+  modulesHelper.rendertemplate:
+    description: |
+      **Метод отображает шаблон по пути к шаблонам.**
+      ```
+      Использование:
+          modules rendertemplate <шаблон> <файл> <аргументы>
+      ```
+    items:
+      not_exists: "Шаблон '{template}' не существует."
+      no_data: "В шаблоне '{template}' нет данных."
+      rendered: "Шаблон '{template}' отображается в '{file_path}'."
+      not_rendered: "Шаблон '{template}' не отображается."
+  modulesHelper.rendermd:
+    description: |
+      **Метод отображает README.md.**
+      ```
+      Использование:
+          modules rendermd <имя_модуля>
+      ```
+    items:
+      template_not_exists: "Шаблон документации не существует, создание md прерывается."
+      rendered: "README.md успешно отображен в '{readme_path}'."
+  modulesHelper.renderreq:
+    description: |
+      **Метод отображает файл require.txt.**
+      ```
+      Использование:
+          modules renderreq <имя_модуля>
+      ```
+    items:
+      not_rendered: "Требование.txt для модуля '{module}' не отображается, поскольку выходные данные pipreqs пусты."
+      rendered: "Файл require.txt успешно обработан для модуля '{module}' и сохранен в '{reqs}'."
+  modulesHelper.renderhash:
+    description: |
+      **Метод отображает хеш для каждого файла модуля.**
+      ```
+      Использование:
+          modules renderhash <имя_модуля>
+      ```
+    items: "Хэш-таблица SHA256 успешно преобразована в '{hash_list_file}'."
+  modulesHelper.rendertests:
+    description: |
+      **Метод отображает тесты из шаблона для указанного модуля.**
+      ```
+      Использование:
+          modules rendertests <модуль>
+      ```
+    items: "Тесты для модуля '{module}' выполнены успешно."
+  modulesHelper.pack:
+    description: |
+      **Метод подготовки модуля и его упаковка в tar-архив.**
+      ```
+      Использование:
+          1. К местоположению пакета по умолчанию:
+              modules pack <имя_модуля>
+          2. В указанное место упаковки:
+              modules pack <имя_модуля> --location <местоположение>
+          3. Чтобы упаковать несколько модулей:
+              modules pack <модуль1> <модуль2> --location <местоположение>
+      ```
+    items:
+      builtin: "Модуль '{module}' встроен."
+      not_found: "Модуль '{module}' не найден."
+  modulesHelper.push:
+    description: |
+      **Метод помещает исходный код модуля в его репозиторий.**
+      >ПРИМЕЧАНИЕ. Прежде чем использовать этот метод, настройте свою учетную запись GitHub на использование ключей SSH.
+      ```
+      Использование:
+          modules push <имя_модуля>
+      ```
+    items:
+      builtin: "Модуль '{module}' встроен."
+      not_configured: "Похоже, ваша учетная запись GitHub не настроена для использования ключей SSH."
+      render_reqs: "Требования к модулю рендеринга, подождите..."
+      render_man: "Руководство по модулю рендеринга, пожалуйста, подождите..."
+      render_hash: "Хэш-таблица модуля рендеринга, пожалуйста, подождите..."
+      success: "Модуль '{module}' успешно отправлен в {module_link}."
+  modulesHelper.test: "**Модуль для работы с тестами модуля.**"
+  modulesHelper.test.viewreport:
+    description: |
+      **Метод просмотра результатов тестов.**
+      ```
+      Использование:
+          1. Просмотр сводного отчета:
+              modules test viewreport <модуль>
+          2. Просмотрите указанный отчет:
+              modules test viewreport <модуль> --report <отчет>
+      ```
+    items: null
+  modulesHelper.test.start:
+    description: |
+      **Метод запускает тесты для указанного модуля.**
+      ```
+      Использование:
+          1. Только тест, без отчетов:
+              modules test start <модуль>
+          2. Тест с отрисовкой отчетов:
+              modules test start <модуль> --report
+      ```
+    items: |
+      Сводный отчет отображается в '{summary_report}'.
+
+      Вы можете просмотреть его, выполнив эту команду:
+      ```
+      modules test viewreport {module}
+      ```
+  modulesHelper.update: "**Модуль для управления и проверки обновлений модулей.**"
+  modulesHelper.update.changes:
+    description: |
+      **Метод печатает журнал изменений для модуля.**
+      ```
+      Использование:
+          1. С приглашением выбрать доступные модули:
+              modules update changes
+          2. С указанным модулем:
+              modules update changes --module <имя_модуля>
+      ```
+    items: "Нечего устанавливать."
+  modulesHelper.update.check:
+    description: |
+      **Метод проверяет обновления для модулей или указанного модуля.**
+      ```
+      Использование:
+          1. Без указания имени модуля:
+              modules update check
+          2. С указанным именем модуля:
+              modules update check --module имя_модуля
+      ```
+    items: "Все модули актуальны."
+  modulesHelper.update.install:
+    description: |
+      **Метод обновляет модули или указанный модуль.**
+      ```
+      Использование:
+          1. Без указания имени модуля:
+              modules update install
+          2. С указанным именем модуля:
+              modules update install --module имя_модуля
+      ```
+    items:
+      nothing: "Нечего устанавливать."
+      up_to_date: "Модуль '{module}' обновлен."
+  modulesHelper.language: "**Модуль для работы с языковыми файлами.**"
+  modulesHelper.language.translate:
+    description: |
+      **Метод переводит локализацию en_US на разные языки.**
+      > ПРИМЕЧАНИЕ. После перевода необходимо вручную проверить правильность перевода.
+      ```
+      Использование:
+          1. Использование по умолчанию:
+              modules language translate <имя_модуля> --language <код_языка>
+          2. С пользовательским поставщиком:
+              modules language translate <имя_модуля> --language <код_языка> --provider <имя_провайдера>
+      ```
+      Доступные провайдеры:
+      * `yandex`
+      * `google` [по умолчанию]
+      * `mymemory`
+      * `microsoft`
+      * `chatgpt`
+    items:
+      created: "Языковой файл для модуля '{module}' успешно сохранен в '{path}'."
+      exists: "Языковой файл '{path}' для модуля '{module}' уже существует, используйте флаг --force, чтобы переписать его."
+
+helpers\modules\utils.py:
+  install_module:
+    items:
+      exists: "Модуль '{module}' уже установлен."
+      failed: "Не удалось получить обновления модуля '{module}'."
+      not_found: "Исходный код модуля {module} не найден."
+      not_installed: "Модуль '{module}' не установлен."
+      installed: "Модуль '{module}' успешно установлен."
+  uninstall_module:
+    items:
+      not_found: "Модуль '{module}' не найден."
+      cancelled: "Удаление модуля '{module}' отменено."
+      choice: "Вы действительно хотите удалить модуль '{module}'?"
+      uninstalled: "Модуль '{module}' удален."
+  pack_module:
+    items:
+      not_found: "Модуль '{module}' не найден."
+      packed: "Модуль упакован в '{архив}'."

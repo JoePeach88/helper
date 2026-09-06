@@ -8,7 +8,7 @@ import subprocess
 from helpers import print_message, print_choice, WARNING, ERROR, install_requirements
 from pathlib import Path
 from tqdm import tqdm
-from env import GITHUB_TOKEN
+from env import GITHUB_TOKEN, lang
 
 
 headers = {
@@ -117,7 +117,7 @@ def detect_builtin():
 
 
 def detect_core():
-    core_files = ['libs', 'cli.py', 'env.py', 'helper', 'helper.bat', 'README.md', 'requirements.txt']
+    core_files = ['lang', 'handler.py', 'cli.py', 'env.py', 'helper', 'helper.bat', 'README.md', 'requirements.txt', 'localization.py', 'messages.py', 'utils.py']
     core_files_paths = []
     for core_file in core_files:
         core_file_path = Path(core_file)
@@ -169,4 +169,4 @@ def install_update(version: str, update_link: str):
     print_message(f'Installing requirements...')
     for req in requirements:
         install_requirements(f'core update {version}', Path(f'./{req}').as_posix())
-    return f'Core update version {version} successfully installed.'
+    return lang.get(version=version)

@@ -1,4 +1,4 @@
-from helpers import mask, print_message, print_choices, print_choice, render_code, render_md, spinning_loader, SUCCESS, INFO, WARNING, ERROR, SUCCESS
+from helpers import lang, mask, print_message, print_choices, print_choice, render_code, render_md, spinning_loader, SUCCESS, INFO, WARNING, ERROR, SUCCESS
 
 
 # Module global settings
@@ -15,21 +15,11 @@ __methods_static_aliases__ = {{}}
 
 
 class {module}Helper:
-    """
-    **Module description here.**
-    """
     def __init__(self, settings: dict):
         self.settings = settings
 
     def hello(self):
-        return 'Hello World!'
+        return lang.get()
 
     def echo(self, arg):
-        """
-        **Method returns your argument.**
-        ```
-        Usage:
-            {module} echo <some_argument>
-        ```
-        """
-        return arg
+        return lang.get(arg=arg)

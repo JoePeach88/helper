@@ -5,8 +5,8 @@ gc.set_debug(0)
 gc.set_threshold(700, 10, 10)
 
 
-from env import GC_ENABLED, __product_name__, __required_python__
-from libs.handler import detect_handler, print_message
+from env import GC_ENABLED, __product_name__, __required_python__, lang
+from handler import detect_handler, print_message
 
 
 def __init__():
@@ -28,7 +28,10 @@ def __init__():
         print_message(f"Total collected garbage: {total_collected}.")
 
 if __name__ == '__main__':
-    if sys.version_info < __required_python__:
-        print_message(f"Python version ({sys.version}) not compatible with {__product_name__} CLI.", 'ERROR', True)
+    if sys.version_info <= __required_python__:
+        required_python = []
+        for num in __required_python__:
+            required_python.append(str(num))
+        print_message(lang.get(py_version=sys.version, product_name=__product_name__, required_version = '.'.join(required_python)), 'ERROR', True)
     else:
         __init__()

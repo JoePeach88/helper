@@ -1,6 +1,6 @@
 # core
 
-**Module to work with helper core.**
+None
 
 ## Methods list
 
@@ -9,7 +9,7 @@
 - [ls](#ls)
 - [rm](#rm)
 - [set](#set)
-- [**logs**](#logs) [module]
+- [**logging**](#logging) [module]
 - [flush](#flush)
 - [ls](#ls)
 - [rm](#rm)
@@ -29,7 +29,7 @@ helper modules install core --location None
 
 **Author: [JoePeach88](https://github.com/JoePeach88)**
 
-**Version: 1.2.0**
+**Version: 1.3.0**
 
 **Supported platforms:**
 
@@ -78,7 +78,7 @@ core config set <section> <option> <value>
 core config set <section> <option> <value> --system-based
 ```
 
-## logs
+## logging
 
 **Module to manipulate with logs.**
 
@@ -87,7 +87,7 @@ core config set <section> <option> <value> --system-based
 **Method removes all log files.**
 ```
 Usage:
-core logs flush
+core logging flush
 ```
 
 ### ls
@@ -95,7 +95,7 @@ core logs flush
 **Method displays logs.**
 ```
 Usage:
-core logs ls
+core logging ls
 ```
 
 ### rm
@@ -103,7 +103,7 @@ core logs ls
 **Method removes log file.**
 ```
 Usage:
-core logs rm
+core logging rm <log_file>
 ```
 
 ### view
@@ -111,7 +111,7 @@ core logs rm
 **Method displays log content.**
 ```
 Usage:
-core logs view <log>
+core logging view <log>
 ```
 
 ### selfcheck

@@ -14,6 +14,7 @@ Use this guide to create and maintain helper modules for the `helper` CLI.
 - [Nesting Rules](#nesting-rules)
 - [Install and Uninstall Scenarios](#install-and-uninstall-scenarios)
 - [Scenario Syntax Reference](#scenario-syntax-reference)
+- [Localization](#localization)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 - [Development Checklist](#development-checklist)
@@ -56,7 +57,7 @@ After creation:
 `__init__.py` is the main file of your helper module.
 
 ```python
-from helpers import print_message, print_choices, SUCCESS, INFO, WARNING, ERROR  # Basic helper imports.
+from helpers import lang, mask, print_message, print_choices, print_choice, render_code, render_md, spinning_loader, SUCCESS, INFO, WARNING, ERROR, SUCCESS  # Basic helper imports.
 from helpers.helpername.helper_additional_module import *  # Imports from additional helper modules.
 
 
@@ -80,11 +81,6 @@ class helpernameHelper:  # Helper class name format: <modulename>Helper
         self.settings = settings
 
     def function_name(self, argument: str):
-        """
-        Returns the argument.
-        Usage:
-            helpername --argument argument
-        """
         return argument
 ```
 
@@ -278,12 +274,104 @@ Example:
 
 `Linux|Darwin(/bin/bash 'rm -f /var/log/helper.log')`
 
+## Localization
+
+> NOTE! Localization is optional, you can still use docstring of class or method as source.
+
+### Directory structure
+
+```text
+helpers
+├───core [built-in]
+├───modules [built-in]
+└───helpername
+    └───lang
+        ├───ru_RU.lng
+        └───en_US.lng
+```
+
+### Localization File Syntax
+
+```yaml
+metadata:
+  author: Author
+  version: Version
+  lang: Lang Name
+
+name_of_file_which_will_be_localized:
+  name_of_helper.name_of_function_which_will_be_localized1: 
+    description: "Usage documentation"  # Documentation string, which will be used with help argument
+    items: "Some localization string"  # Used if outputs only one result from function
+  name_of_helper.name_of_function_which_will_be_localized2:
+    items:
+      description: "Usage documentation" # Documentation string, which will be used with help argument
+      # This additional ids used if outputs multiple results from function
+      additional_id1: "Some localization string"
+      additional_id2: "Some localization string"
+```
+
+### In Helper Usage
+
+> Structure:
+
+```text
+helpers
+└───mainclass
+    ├───lang
+    |   └───en_US.lng
+    └───__init__.py
+```
+
+> en_US.lng
+
+```yaml
+metadata:
+  author: SomeAuthor
+  version: 1.0.0
+  lang: English
+
+__init__:
+  mainclassHelper.single_result:
+    description: |
+      Usage:
+        mainclass single_result
+    items: "Hello World!"
+  mainclassHelper.multiple_results:
+    description: |
+      Usage:
+        mainclass multiple_results --true
+    items:
+        first: "First string"
+        second: "Second string"
+```
+
+> \_\_init\_\_.py
+
+```python
+from helpers import lang, mask, print_message, print_choices, print_choice, render_code, render_md, spinning_loader, SUCCESS, INFO, WARNING, ERROR, SUCCESS  # Basic helper imports.
+from helpers.helpername.helper_additional_module import *  # Imports from additional helper modules.
+
+...
+
+class mainclassHelper:
+    def __init__(self, settings: dict):
+        self.settings = settings
+
+    def single_result(self):
+        return lang.get()  # Returns "Hello World!" from en_US.yml
+    
+    def multiple_results(self, true: bool = False):
+        return lang.get('first') if true else lang.get('second')  # Returns "First string" or "Second string" depends on `true` state. For example if you run `helper mainclass multiple_results --true` result will be "First string"
+```
+
+
 ## Best Practices
 
 - Keep helper methods small and task-specific.
 - Use meaningful method names and aliases.
 - Document method usage in docstrings.
 - Limit side effects in install/uninstall hooks.
+- Make localization only for returned data, not print_message values.
 - Keep scenario scripts idempotent when possible.
 
 ## Troubleshooting

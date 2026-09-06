@@ -4,15 +4,16 @@ import sys
 import re
 import subprocess
 from pathlib import Path
-from env import loader, config_file, SYSTEM_PLATFORM, HRDRM_ENABLED, PIP_PROXY, PIP_BREAK_SYSTEM_PACKAGES, get_system_based_value
+from env import loader, config_file, SYSTEM_PLATFORM, HRDRM_ENABLED, PIP_PROXY, PIP_BREAK_SYSTEM_PACKAGES, get_system_based_value, LANGUAGE, lang
+from difflib import get_close_matches
 
 
 HELPERS_DIR = Path(__file__).resolve().parent
 HELPERS_PARENT_DIR = HELPERS_DIR.parent
+CRASH_COUNTER = 0
 if str(HELPERS_PARENT_DIR) not in sys.path:
     sys.path.insert(0, str(HELPERS_PARENT_DIR))
-from libs.messages import mask, print_message, print_choices, print_choice, render_code, render_md, spinning_loader, WARNING, ERROR, SUCCESS, INFO
-
+from messages import mask, print_message, print_choices, print_choice, render_code, render_md, spinning_loader, WARNING, ERROR, SUCCESS, INFO, BASE_LIBRARY
 
 def install_requirements(module_name: str, requirements_file: str):
     try:
@@ -31,7 +32,7 @@ def install_requirements(module_name: str, requirements_file: str):
         process = subprocess.Popen(command, stdout=subprocess.PIPE, text=True)
 
         for line in process.stdout:
-            print_message(line)
+            print_message(line.strip())
 
         process.wait()
         print_message(f"Successfully installed packages from {requirements_file} for module '{module_name}'.")
@@ -96,7 +97,7 @@ def _load_modules_from_directory(directory_path: str, package: str = None, force
                             print_message(f"Module '{module_name}' loaded, but may not work correctly because it is not supported anymore, better way is delete it via command 'modules rm {module_name}'.", WARNING)
                     elif module.__module_status__ in ['stable', 'supported', 'prod']:
                         if force:
-                            print_message(f"Loaded module: '{module_name}'")
+                            print_message(f"Loaded module: '{module_name}'.")
                     else:
                         if force:
                             print_message(f"Module '{module_name}' loaded, but have unknown stability status.", WARNING)
@@ -112,9 +113,10 @@ def _load_modules_from_directory(directory_path: str, package: str = None, force
         except ModuleNotFoundError:
             reqs_path = Path(file_path) / 'requirements.txt'
             if reqs_path.exists():
-                if install_reqs:
+                if install_reqs and CRASH_COUNTER <= 5:
+                    CRASH_COUNTER += 1
                     if force:
-                        print_message(f"Module was not loaded correctly, cause some dependencies was not found, installing packages from module`s '{module_name}' requirements.txt...", WARNING)
+                        print_message(f"[Try {CRASH_COUNTER}/5]Module was not loaded correctly, cause some dependencies was not found, installing packages from module`s '{module_name}' requirements.txt...", WARNING)
                     install_requirements(module_name, reqs_path)
                     return _load_modules_from_directory(directory_path, package, install_reqs=install_reqs)
                 else:
@@ -122,7 +124,7 @@ def _load_modules_from_directory(directory_path: str, package: str = None, force
                         print_message(f"Module '{module_name}' not loaded cause it missing packages from requirements and HRDRM is disabled.", WARNING)
             else:
                 if force:
-                    print_message(f"Cannot load module '{module_name}' cause it missing some packages and cannot be resolved via `helper requirements dynamic resolve method (HRDRM)`, please generate requirements manually via modules renderreq {module_name} and then execute helper CLI.", WARNING)
+                    print_message(f"Cannot load module '{module_name}' cause it missing some packages and cannot be resolved via `helper requirements dynamic resolve method (HRDRM)`, please generate requirements manually via modules renderreq {module_name} and then execute helper CLI.", ERROR)
 
         except AttributeError:
             if module in modules:
@@ -201,7 +203,7 @@ class Helper:
                 self.aliases = _find_aliases(helper)
                 self.helper = getattr(helper_mod, helper_init)
                 self.helper = self.helper(helper_settings)
-                print_message(f"Helper '{helper}' initialized with settings '{helper_settings}'.")
+                print_message(f"Helper '{helper}' initialized with settings '{mask(helper_settings)}'.")
             else:
                 print_message(f"Specified helper '{helper}' not found.", ERROR)
         except Exception as e:
@@ -216,15 +218,15 @@ class Helper:
         if readme.exists():
             with open(readme, encoding='utf-8') as readme_file:
                 return render_md(readme_file.read())
-        return f"Module '{helper_name}' has no available manual."
+        return lang.get(Path(__file__).parent.parent / '__init__.py', helper_name = helper_name)
 
     def requirements(self):
         reqs = Path(self.module.__file__).parent / 'requirements.txt'
         helper_name = Path(self.module.__file__).parent.stem
         if reqs.exists():
             with open(reqs, encoding='utf-8') as reqs_file:
-                return f"Module '{helper_name}' requirements:\n{reqs_file.read().strip()}"
-        return f"Module '{helper_name}' has no available requirements."
+                return lang.get(Path(__file__).parent.parent / '__init__.py', key='reqs', helper_name = helper_name, reqs = reqs_file.read().strip())
+        return lang.get(Path(__file__).parent.parent / '__init__.py', key='no_reqs', helper_name = helper_name)
 
     def changes(self):
         changelog = Path(self.module.__file__).parent / 'CHANGELOG.md'
@@ -232,7 +234,7 @@ class Helper:
         if changelog.exists():
             with open(changelog, encoding='utf-8') as changelog_file:
                 return render_md(changelog_file.read())
-        return f"Module '{helper_name}' has no available changelog."
+        return lang.get(Path(__file__).parent.parent / '__init__.py', helper_name = helper_name)
 
     def __getattr__(self, name):
         return getattr(self.helper, name)

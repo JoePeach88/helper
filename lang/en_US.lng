@@ -1,0 +1,105 @@
+---
+metadata:
+  author: JoePeach88
+  version: 1.0.0
+  lang: English
+
+cli.py:
+  __main__: 
+    items: "Python version ({py_version}) not compatible with {product_name} CLI, required version <= {required_version}."
+
+handler.py:
+  description: |
+    # helper CLI
+    **The CLI which interpretates python modules as CLI commands.**
+
+    Usage:
+
+    ```
+    helper <module> <module_method> <module_args>
+    ```
+
+    ## Helpfull commands:
+
+    `helper howto` - to view helper development guide.
+
+    `helper version` - to view information about helper cli version and it installed modules.
+
+    `helper debug` - to view cli debug information.
+
+    `helper core selfcheck` - to check that all setup correctly.
+
+    `helper modules ls` - to view all available modules.
+
+    `helper <module_name> man` - to view manual for helper module.
+
+    `helper <module_name> help` - to view help information for module, show all available methods and its aliases.
+  _get_attribute:
+    items: "\n\nAvailable manual:\n"
+  helper_handler:
+    items: "Time spent: {measure_time}."
+  detect_handler:
+    items:
+      new_version: "> ℹ️ **INFO:** New helper version ({version}) available, install it via command below:\n\n```\nhelper core update install\n```"
+      disabled: "Module '{method}' is disabled."
+  prepare_doc:
+    items:
+      aliases: "\n**{method}**\n> Aliases: {alias}\n---\n"
+      aliases_module: "\n**{method}** [module]\n> Aliases: {alias}\n---\n"
+      doc: "\n\n## Available methods:\n\n---\n{module_name} {module_formatted_methods}"
+  version_handler:
+    items: |
+      CLI Version: {version} [{version_name}] ({release})
+
+      Helpers Modules:
+  debug_handler:
+    items:
+      before_selfcheck: |
+        System Information:
+
+        System: {platform}
+        System locale: {locale}
+        System encoding: {encoding}
+        Python Version: {version}
+        Python Executable Path: {executable}
+      after_selfcheck: |
+        Is admin: {is_admin}
+        Less lines: {less_lines}
+        Log file logs levels: {logs_levels}
+        Logs path: {logs_path}
+        Pip proxy: {pip_proxy}
+        Pip --break_system_packages option: {pip_break_system_packages}
+        Debug mode: {debug}
+        Emoji enabled: {emoji_enabled}
+        Unpack file filter: {unpack_file_filter}
+        HRDRM enabled: {hrdrm_enabled}
+        GC enabled: {gc_enabled}
+
+      modules_settings: "Modules settings:\n"
+      cli_info: "CLI Information:\n"
+
+messages.py:
+  __main__:
+    items:
+      base_library:
+        "yes": "Yes"
+        "no": "No"
+        units: ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+  print_choices:
+    items:
+      all: "{btn_index}. All\n"
+      previous: "{btn_index}. Previous page"
+      next: "{btn_index}. Next page"
+      back: "{btn_index}. Back"
+      exit: "{btn_index}. Exit"
+
+# Thats for helpers init
+__init__.py:
+  Helper.man:
+    items: "Module '{helper_name}' has no available manual."
+  Helper.requirements:
+    items:
+      reqs: "Module '{helper_name}' requirements:\n{reqs}"
+      no_reqs: "Module '{helper_name}' has no requirements."
+  Helper.changes:
+    items: "Module '{helper_name}' has no available changelog."

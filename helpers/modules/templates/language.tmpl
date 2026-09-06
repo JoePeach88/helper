@@ -1,0 +1,19 @@
+---
+metadata:
+  author: {author}
+  version: {version}
+  lang: English
+
+helpers\{module}\__init__.py:
+  {module}Helper: "**Module description here.**"
+  {module}Helper.hello:
+    description: "This method only returns 'Hello World!' string."
+    items: 'Hello World!'
+  {module}Helper.echo:
+    description: |
+      **Method returns your argument.**
+      ```
+      Usage:
+          {module} echo <some_argument>
+      ```
+    items: "Your argument is: '{{arg}}'."

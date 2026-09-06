@@ -1,0 +1,104 @@
+---
+metadata:
+  author: JoePeach88
+  version: 1.0.0
+  lang: Русский
+
+cli.py:
+  __main__: 
+    items: "Версия Python ({py_version}) не совместима с {product_name} CLI, необходимая версия <= {required_version}."
+
+handler.py:
+  description: |
+    # helper CLI
+    **CLI которая интерпретирует модули Python\`а как команды.**
+
+    Использование:
+
+    ```
+    helper <модуль> <метод_модуля> <аргументы>
+    ```
+
+    ## Полезные комманды:
+
+    `helper howto` - для просмотра инструкции по разработке модулей.
+
+    `helper version` - для просмотра информации о CLI и модулях.
+
+    `helper debug` - для просмотра дебаг информации.
+
+    `helper core selfcheck` - для проверки работоспособности CLI.
+
+    `helper modules ls` - для просмотра всех установленных модулей.
+
+    `helper <module_name> man` - для просмотра мануала к модулю.
+
+    `helper <module_name> help` - для просмотра всех известных методов модуля и их алиасов.
+  _get_attribute:
+    items: "\n\nДоступный мануал:\n"
+  helper_handler:
+    items: "Затраченное время: {measure_time}."
+  detect_handler:
+    items:
+      new_version: "> ℹ️ **INFO:** New helper version ({version}) available, install it via command below:\n\n```\nhelper core update install\n```"
+      disabled: "Module '{method}' is disabled."
+  prepare_doc:
+    items:
+      aliases: "\n**{method}**\n> Алиасы: {alias}\n---\n"
+      aliases_module: "\n**{method}** [модуль]\n> Алиасы: {alias}\n---\n"
+      doc: "\n\n## Доступные методы:\n\n---\n{module_name} {module_formatted_methods}"
+  version_handler:
+    items: | 
+      Версия CLI: {version} [{version_name}] ({release})
+      
+      Модули:
+  debug_handler:
+    items:
+      before_selfcheck: |
+        Информация о системе:
+
+        Система: {platform}
+        Локализация системы: {locale}
+        Кодировка системы: {encoding}
+        Версия Python: {version}
+        Исполняемый файл Python: {executable}
+      after_selfcheck: |
+        Администратор: {is_admin}
+        Строки less: {less_lines}
+        Уровни логирования для лог-файла: {logs_levels}
+        Путь к логам: {logs_path}
+        Pip прокси: {pip_proxy}
+        Параметр pip --break_system_packages: {pip_break_system_packages}
+        Дебаг режим: {debug}
+        Эмодзи включены: {emoji_enabled}
+        Фильтр для распаковки файлов: {unpack_file_filter}
+        HRDRM включен: {hrdrm_enabled}
+        GC включен: {gc_enabled}
+      modules_settings: "Настройки модулей:\n"
+      cli_info: "Информация о CLI:\n"
+
+messages.py:
+  __main__:
+    items:
+      base_library:
+        "yes": "Да"
+        "no": "Нет"
+        units: ["Б", "КБ", "МБ", "ГБ", "ТБ", "ПБ", "ЭБ", "ЗБ", "ЙБ"]
+  print_choices:
+    items:
+      all: "{btn_index}. Все\n"
+      previous: "{btn_index}. Предыдущая страница"
+      next: "{btn_index}. Следующая страница"
+      back: "{btn_index}. Назад"
+      exit: "{btn_index}. Выход"
+
+# Thats for helpers init
+__init__.py:
+  Helper.man:
+    items: "Модуль '{helper_name}' не имеет доступного мануала."
+  Helper.requirements:
+    items:
+      reqs: "Зависимости модуля '{helper_name}':\n{reqs}"
+      no_reqs: "Модуль '{helper_name}' не имеет зависимостей."
+  Helper.changes:
+    items: "Модуль '{helper_name}' не имеет доступного ченджлога."

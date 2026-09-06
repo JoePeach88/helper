@@ -1,0 +1,136 @@
+---
+metadata:
+  author: JoePeach88
+  version: 1.0.0
+  lang: Русский
+
+helpers\core\__init__.py:
+  coreHelper: "**Модуль для работы с вспомогательным ядром.**"
+  coreHelper.selfcheck:
+    description: |
+      **Метод проверяет правильность работы всех необходимых параметров.**
+      ```
+      Использование:
+          core selfcheck
+      ```
+    items:
+      connected: |
+        Статус подключения GitHub: Установлено. Аутентифицирован как {user}.
+        Набор токенов GitHub: {status}
+      not_connected: |
+        Статус подключения GitHub: Не подключено.
+        GitHub токен: {status}
+  coreHelper.config: "**Модуль для управления параметрами конфигурации помощника.**"
+  coreHelper.config.get:
+    description: |
+      **Метод извлекает данные конфигурации.**
+      ```
+      Использование:
+          core config get <раздел> <опция>
+      ```
+    items: |
+      Данные конфигурации:
+          Раздел: {section}
+          Вариант: {option}
+          Значение: {value}
+  coreHelper.config.set:
+    description: |
+      **Метод устанавливает данные конфигурации.**
+      ```
+      Использование:
+          1. Простой набор значений:
+              core config set <раздел> <опция> <значение>
+          2. Набор значений на основе текущей системы:
+              core config set <раздел> <опция> <значение> --system-based
+      ```
+    items:
+      token: |
+        Здравствуйте, {user}! Вы успешно установили токен для GitHub.
+
+        Установлены следующие значения:
+            Раздел: {section}
+            Вариант: {option}
+            Значение: {value}
+      set: |
+        Установлены следующие значения:
+            Раздел: {section}
+            Вариант: {option}
+            Значение: {value}
+  coreHelper.config.rm:
+    description: |
+      **Метод удаляет указанный раздел или параметр.**
+      ```
+      Использование:
+          core config rm <раздел> <опция>
+      ```
+    items: |
+      Удалены следующие значения:
+          Раздел: {section}
+          Вариант: {option}
+  coreHelper.config.ls:
+    description: |
+      **Метод отображает все данные конфигурации.**
+      ```
+      Использование:
+          core config ls
+      ```
+    items: null
+  coreHelper.update: "**Модуль обновляет вспомогательное ядро.**"
+  coreHelper.update.check:
+    description: |
+      **Метод проверяет обновления вспомогательного ядра.**
+      ```
+      Использование:
+          core update check
+      ```
+    items:
+      failed: "Не удалось получить обновления ядра."
+      up_to_date: "Все модули актуальны."
+  coreHelper.update.install:
+    description: |
+      **Метод обновляет вспомогательное ядро.**
+      ```
+      Использование:
+          core update install
+      ```
+    items: "Нечего устанавливать."
+  coreHelper.logging: "**Модуль для работы с журналами.**"
+  coreHelper.logging.ls:
+    description: |
+      **Метод отображает журналы.**
+      ```
+      Использование:
+          core logging ls
+      ```
+    items: |
+      Доступные журналы ({logs_len}):
+      {журналы}
+  coreHelper.logging.view:
+    description: |
+      **Метод отображает содержимое журнала.**
+      ```
+      Использование:
+          core logging view <log>
+      ```
+    items: null
+  coreHelper.logging.rm:
+    description: |
+      **Метод удаляет файл журнала.**
+      ```
+      Использование:
+          core logging rm <файл_журнала>
+      ```
+    items: "Файл журнала '{log_file}' удален."
+  coreHelper.logging.flush:
+    description: |
+      **Метод удаляет все файлы журналов.**
+      ```
+      Использование:
+          core logging flush
+      ```
+    items:
+      removed: "Все логи удалены."
+      empty: "Нечего удалять."
+
+helpers\core\utils.py:
+  install_update: "Версия {version} основного обновления успешно установлена."

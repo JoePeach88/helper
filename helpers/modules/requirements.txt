@@ -1,7 +1,11 @@
-GitPython==3.1.58
+beautifulsoup4==4.15.0
+deep_translator==1.11.4
+GitPython==3.1.61
 pandas==3.0.5
 pipreqs==0.5.0
+psutil==7.0.0
 pytest==9.1.1
 pytest_html==4.2.0
+pywebview==6.2.1
 PyYAML==6.0.3
 rich==15.0.0

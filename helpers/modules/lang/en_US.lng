@@ -1,0 +1,272 @@
+---
+metadata:
+  author: JoePeach88
+  status: stable
+  version: 1.0.0
+  lang: English
+
+helpers\modules\__init__.py:
+  modulesHelper: "**Module to work with helper modules.**"
+  modulesHelper.ls:
+    description: |
+      **Method displays all available modules.**
+      ```
+      Usage:
+          modules ls
+      ```
+    items: |
+      Available modules ({helpers_len}):
+      {helpers_list}
+  modulesHelper.info:
+    description: |
+      **Method displays information about installed module.**
+      ```
+      Usage:
+          modules info --module <module_name>
+      ```
+    items:
+      not_found: "Module with name '{module}' not found."
+      info: |
+        Name: {name}
+        Author: {author}
+        Version: {version}
+        Builtin: {builtin}
+        Link: {link}
+        Path: {path}
+        Languages: {languages}
+        Compatible: {compatibility}
+        Size: {size}
+  modulesHelper.disable:
+    description: |
+      **Method disables module.**
+      ```
+      Usage:
+          modules disable --module <module_name>
+      ```
+    items:
+      disabled: "Module '{module}' disabled."
+      builtin: "Module '{module}' is builtin."
+      not_found: "Module '{module}' not found."
+  modulesHelper.enable:
+    description: |
+      **Method enables module.**
+      ```
+      Usage:
+          modules enable --module <module_name>
+      ```
+    items:
+      disabled: "Module '{module}' enabled."
+      builtin: "Module '{module}' is builtin."
+      not_found: "Module '{module}' not found."
+  modulesHelper.install:
+    description: |
+      **Method installs specified module from link or from path.**
+      ```
+      Usage:
+          modules install <module_name> --location <link or path>
+      ```
+    items: "Module '{module}' is builtin."
+  modulesHelper.uninstall:
+    description: |
+      **Method uninstalls specified module.**
+      ```
+      Usage:
+          modules uninstall <module_name>
+      ```
+    items: "Module '{module}' is builtin."
+  modulesHelper.create:
+    description: |
+      **Method creates empty module from template for development.**
+      ```
+      Usage:
+          modules create <module_name> --name ModuleName --author Author --version 1.0.0 --systems Linux,Windows,Darwin
+      ```
+    items:
+      builtin: "Module '{module}' is builtin."
+      created: "Module '{module}' created."
+      exists: "Module '{module}' already exists."
+  modulesHelper.rendertemplate:
+    description: |
+      **Method renders template from templates path.**
+      ```
+      Usage:
+          modules rendertemplate <template> <file> <args>
+      ```
+    items:
+      not_exists: "Template '{template}' not exists."
+      no_data: "Template '{template}' has no data."
+      rendered: "Template '{template}' rendered to '{file_path}'."
+      not_rendered: "Template '{template}' not rendered."
+  modulesHelper.rendermd:
+    description: |
+      **Method renders README.md.**
+      ```
+      Usage:
+          modules rendermd <module_name>
+      ```
+    items:
+      template_not_exists: "Documentation template not exists, aborting md creation."
+      rendered: "README.md successfully rendered to '{readme_path}'."
+  modulesHelper.renderreq:
+    description: |
+      **Method renders requirements.txt.**
+      ```
+      Usage:
+          modules renderreq <module_name>
+      ```
+    items:
+      not_rendered: "requirements.txt for module '{module}' not rendered cause output from pipreqs is empty."
+      rendered: "requirements.txt successfully rendered for module '{module}' and saved to '{reqs}'."
+  modulesHelper.renderhash:
+    description: |
+      **Method renders hash for each module file.**
+      ```
+      Usage:
+          modules renderhash <module_name>
+      ```
+    items: "SHA256 hash table successfully rendered to '{hash_list_file}'."
+  modulesHelper.rendertests:
+    description: |
+      **Method renders tests from template for specified module.**
+      ```
+      Usage:
+          modules rendertests <module>
+      ```
+    items: "Tests for module '{module}' rendered successfully."
+  modulesHelper.pack:
+    description: |
+      **Method prepare module and packs it to tar archive.**
+      ```
+      Usage:
+          1. To default pack location:
+              modules pack <module_name>
+          2. To specified pack location:
+              modules pack <module_name> --location <location>
+          3. To pack few modules:
+              modules pack <module1> <module2> --location <location>
+      ```
+    items:
+      builtin: "Module '{module}' is builtin."
+      not_found: "Module '{module}' not found."
+  modulesHelper.push:
+    description: |
+      **Method pushes module source code to it`s repo.**
+      >NOTE: Before using this method, configure your GitHub account to use SSH keys.
+      ```
+      Usage:
+          modules push <module_name>
+      ```
+    items:
+      builtin: "Module '{module}' is builtin."
+      not_configured: "Seems like your GitHub account not configured to use SSH keys."
+      render_reqs: "Rendering module requirements, please wait..."
+      render_man: "Rendering module manual, please wait..."
+      render_hash: "Rendering module hash table, please wait..."
+      success: "Module '{module}' successfully pushed to {module_link}."
+
+  modulesHelper.test: "**Module to work with module`s tests.**"
+  modulesHelper.test.viewreport:
+    description: |
+      **Method to view tests results.**
+      ```
+      Usage:
+          1. View summary report:
+              modules test viewreport <module>
+          2. View specified report:
+              modules test viewreport <module> --report <report>
+      ```
+    items: null
+  modulesHelper.test.start:
+    description: |
+      **Method runs tests for specified module.**
+      ```
+      Usage:
+          1. Only test, without reports:
+              modules test start <module>
+          2. Test with reports rendering:
+              module test start <module> --report
+      ```
+    items: |
+      Summary report rendered to '{summary_report}'.
+      
+      You can view it throw this command:
+      ```
+      modules test viewreport {module}
+      ```
+
+  modulesHelper.update: "**Module to manipulate and check updates for modules.**"
+  modulesHelper.update.changes:
+    description: |
+      **Method prints changelog for module.**
+      ```
+      Usage:
+          1. With prompt to select available modules.
+              modules update changes
+          2. With specified module.
+              modules update changes --module <module_name>
+      ```
+    items: "Nothing to install."
+  modulesHelper.update.check:
+    description: |
+      **Method checks updates for modules or specified module.**
+      ```
+      Usage:
+          1. Without specified module name:
+              modules update check
+          2. With specified module name:
+              modules update check --module module_name
+      ```
+    items: "All modules are up-to-date."
+  modulesHelper.update.install:
+    description: |
+      **Method updates modules or specified module.**
+      ```
+      Usage:
+          1. Without specified module name:
+              modules update install
+          2. With specified module name:
+              modules update install --module module_name
+      ```
+    items:
+      nothing: "Nothing to install."
+      up_to_date: "Module '{module}' is up-to-date."
+  modulesHelper.language: "**Module to work with language files.**"
+  modulesHelper.language.translate:
+    description: | 
+      **Method translates en_US localization to different languages.**
+      > NOTE: After translation, you need to manually check translate correctness.
+      ```
+      Usage:
+          1. Default usage: 
+              modules language translate <module_name> --language <language_code>
+          2. With custom provider:
+              modules language translate <module_name> --language <language_code> --provider <provider_name>
+      ```
+      Available providers:
+      * `yandex`
+      * `google` [default]
+      * `mymemory`
+      * `microsoft`
+      * `chatgpt`
+    items: 
+      created: "Language file for module '{module}' successfully save to '{path}'."
+      exists: "Language file '{path}' for module '{module}' already exists, use --force flag to rewrite it."
+
+helpers\modules\utils.py:
+  install_module:
+    items: 
+      exists: "Module '{module}' already installed."
+      failed: "Failed to retrieve updates of module '{module}'."
+      not_found: "Source for module {module} not found."
+      not_installed: "Module '{module}' not installed."
+      installed: "Module '{module}' installed successfully."
+  uninstall_module:
+    items:
+      not_found: "Module '{module}' not found."
+      cancelled: "Module '{module}' uninstall cancelled."
+      choice: "Do you really want to remove module '{module}'?"
+      uninstalled: "Module '{module}' uninstalled."
+  pack_module:
+    items:
+      not_found: "Module '{module}' not found."
+      packed: "Module packed to '{archive}'."

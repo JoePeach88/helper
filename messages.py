@@ -1,5 +1,4 @@
 import os
-import inspect
 import traceback
 import sys
 import time
@@ -9,7 +8,8 @@ from rich.markdown import Markdown
 from rich.syntax import Syntax
 from datetime import datetime
 from pathlib import Path
-from env import BLUE, YELLOW, RED, GREEN, RESET, LOGS_PATH, LOGS_LEVELS, DEBUG, LESS_LINES, SYSTEM_PLATFORM, EMOJI_ENABLED
+from utils import get_caller_module_name
+from env import BLUE, YELLOW, RED, GREEN, RESET, LOGS_PATH, LOGS_LEVELS, DEBUG, LESS_LINES, SYSTEM_PLATFORM, EMOJI_ENABLED, INPUT_STYLE, MORE_STYLE, lang
 
 if SYSTEM_PLATFORM == 'Windows':
     import msvcrt as userinpurt
@@ -20,20 +20,20 @@ INFO = 'INFO'
 WARNING = 'WARNING'
 ERROR = 'ERROR'
 SUCCESS = 'SUCCESS'
-VALID_LEVELS = {'INFO', 'WARNING', 'ERROR', 'SUCCESS'}
-
-
-def __get_caller_module_name():
-    stack = inspect.stack()
-    if len(stack) < 3:
-        return None, None
-
-    caller_frame = stack[2].frame
-    function = stack[2].function
-    module = inspect.getmodule(caller_frame)
-    if module is None:
-        return None, None
-    return module.__file__, function
+BASE_LIBRARY = lang.get(key='base_library')
+VALID_LEVELS = {INFO, WARNING, ERROR, SUCCESS}
+EMOJI_MAP = {
+    INFO: '🔵',
+    WARNING: '🟡',
+    ERROR: '🔴',
+    SUCCESS: '🟢'
+}
+COLOR_MAP = {
+    INFO: BLUE,
+    WARNING: YELLOW,
+    ERROR: RED,
+    SUCCESS: GREEN
+}
 
 
 def render_code(content: str, lexer: str):
@@ -57,7 +57,7 @@ def mask(d: dict):
         if isinstance(value, dict):
             masked_dict[key] = mask(value)
         elif pattern.search(key):
-            masked_dict[key] = '****'
+            masked_dict[key] = '**CONTENT_MASKED**'
         else:
             masked_dict[key] = value
     return masked_dict
@@ -69,29 +69,16 @@ def print_message(message: str, message_level: str = INFO, force: bool = False, 
 
     Args:
         message (str): Message which will be displayed in terminal output if debug mod and message level for display is enabled and set in cli settings.
-        message_level (str): Message level (INFO, SUCCESS, WARNING or ERROR).
+        message_level (str): Message level (INFO, SUCCESS, WARNING or ERROR constant variables).
         force (bool): Force display message.
     """
-    module, function = __get_caller_module_name()
+    module, function = get_caller_module_name()
     if function == '<module>':
         function = '__main__'
-    module = Path(module).relative_to(Path(__file__).parent.parent).as_posix()
-    EMOJI_MAP = {
-        'INFO': '🔵',
-        'WARNING': '🟡',
-        'ERROR': '🔴',
-        'SUCCESS': '🟢'
-    }
-    COLOR_MAP = {
-        'INFO': BLUE,
-        'WARNING': YELLOW,
-        'ERROR': RED,
-        'SUCCESS': GREEN
-    }
-
+    module = Path(module).relative_to(Path(__file__).parent).as_posix()
 
     if message_level not in VALID_LEVELS:
-        raise ValueError(f'Unknown message_level "{message_level}".')
+        raise ValueError(lang.get(message_level=message_level))
 
     color = COLOR_MAP.get(message_level, RESET)
     emoji = EMOJI_MAP.get(message_level, None)
@@ -102,6 +89,7 @@ def print_message(message: str, message_level: str = INFO, force: bool = False, 
     if message_level == ERROR:
         if traceback.format_exc().split() != ['NoneType:', 'None']:
             formatted_message += f"\n{traceback.format_exc()}"
+
     if message_level in LOGS_LEVELS:
         os.makedirs(LOGS_PATH, mode=0o755, exist_ok=True)
         log_file_path = Path(LOGS_PATH) / f"{datetime.now().strftime('%Y-%m-%d')}.log"
@@ -166,7 +154,7 @@ def less(string: str):
         count += 1
         
         if count >= max_lines:
-            print('---MORE---')
+            print(MORE_STYLE)
             skip_line, scroll_end = wait_for_user_input()
             
             if not skip_line:
@@ -193,29 +181,29 @@ def print_choices(choices: list, multiple_choice: bool = False, all_btn: bool = 
         output += f'{i}. {category}\n'
 
     if all_btn:
-        output += f'{btn_index}. All\n'
+        output += lang.get(key='all', btn_index = btn_index)
         btn_index += 1
         choices.append('all')
 
     if previous_btn:
-        output += f'{btn_index}. Previous page\n'
+        output += lang.get(key='previous', btn_index = btn_index)
         btn_index += 1
 
     if next_btn:
-        output += f'{btn_index}. Next page\n'
+        output += lang.get(key='next', btn_index = btn_index)
         btn_index += 1
 
     if back_btn:
-        output += f'{btn_index}. Back'
+        output += lang.get(key='back', btn_index = btn_index)
         btn_index += 1
 
     if exit_btn:
-        output += f'{btn_index}. Exit'
+        output += lang.get(key='exit', btn_index = btn_index)
         btn_index += 1
 
     print(output)
     try:
-        user_choice = input('> ')
+        user_choice = input(f'{INPUT_STYLE} ')
         if multiple_choice:
             selected_indexes = [int(choice.strip()) - 1 for choice in user_choice.split(',')]
         else:
