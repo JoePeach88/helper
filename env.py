@@ -122,7 +122,7 @@ md_return_output = False
 logs_path = {Path(Path(__file__).parent / 'logs').as_posix()}
 logs_levels = ERROR
 debug = False
-emoji_enabled = True
+emoji_enabled = False
 colored_output = True
 measure_time = False
 """
@@ -174,4 +174,4 @@ else:
     RESET = Fore.RESET
 
 # Localization
-lang = lang(LANGUAGE, DEBUG, COLORED_OUTPUT)
+lang = lang(LANGUAGE, DEBUG, COLORED_OUTPUT, EMOJI_ENABLED)

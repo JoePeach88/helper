@@ -5,7 +5,7 @@ metadata:
   version: "1.0.0"
   lang: "Русский"
 
-helpers\modules\__init__.py:
+helpers/modules/__init__.py:
   modulesHelper: "Модуль '{module}' уже установлен."
   modulesHelper.ls:
     description: |
@@ -250,7 +250,7 @@ helpers\modules\__init__.py:
       created: "Языковой файл для модуля '{module}' успешно сохранен в '{path}'."
       exists: "Языковой файл '{path}' для модуля '{module}' уже существует, используйте флаг --force, чтобы переписать его."
 
-helpers\modules\utils.py:
+helpers/modules/utils.py:
   install_module:
     items:
       exists: "Модуль '{module}' уже установлен."

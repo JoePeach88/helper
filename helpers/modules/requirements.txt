@@ -1,6 +1,6 @@
 beautifulsoup4==4.15.0
 deep_translator==1.11.4
-GitPython==3.1.61
+GitPython==3.1.62
 pandas==3.0.5
 pipreqs==0.5.0
 psutil==7.0.0

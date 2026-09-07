@@ -4,7 +4,7 @@ metadata:
   version: 1.0.0
   lang: Русский
 
-helpers\core\__init__.py:
+helpers/core/__init__.py:
   coreHelper: "**Модуль для работы с вспомогательным ядром.**"
   coreHelper.selfcheck:
     description: |
@@ -132,6 +132,6 @@ helpers\core\__init__.py:
       removed: "Все логи удалены."
       empty: "Нечего удалять."
 
-helpers\core\utils.py:
+helpers/core/utils.py:
   __main__: "Токен GitHub не установлен, функции обновления, установки и проверки обновлений для модулей и модулей ядра могут работать некорректно, установите токен с помощью команды `helper core config set core:remote gh_api_token <здесь_ваш_токен>`."
   install_update: "Версия {version} основного обновления успешно установлена."

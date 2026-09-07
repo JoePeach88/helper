@@ -4,7 +4,7 @@ metadata:
   version: 1.0.0
   lang: English
 
-helpers\core\__init__.py:
+helpers/core/__init__.py:
   coreHelper: "**Module to work with helper core.**"
   coreHelper.selfcheck:
     description: |
@@ -132,6 +132,6 @@ helpers\core\__init__.py:
       removed: "All logs removed."
       empty: "Nothing to remove."
 
-helpers\core\utils.py:
+helpers/core/utils.py:
   __main__: "GitHub token not set, update, install and check functions of modules and core modules will work incorrect, set token via `helper core config set core:remote gh_api_token <your token here>`."
   install_update: "Core update version {version} successfully installed."

@@ -5,7 +5,7 @@ metadata:
   version: 1.0.0
   lang: English
 
-helpers\modules\__init__.py:
+helpers/modules/__init__.py:
   modulesHelper: "**Module to work with helper modules.**"
   modulesHelper.ls:
     description: |
@@ -252,7 +252,7 @@ helpers\modules\__init__.py:
       created: "Language file for module '{module}' successfully save to '{path}'."
       exists: "Language file '{path}' for module '{module}' already exists, use --force flag to rewrite it."
 
-helpers\modules\utils.py:
+helpers/modules/utils.py:
   install_module:
     items: 
       exists: "Module '{module}' already installed."

@@ -4,10 +4,11 @@ from utils import get_caller_module_name
 
 
 class lang:
-    def __init__(self, lang_code: str, debug: bool = False, colored_output: bool = False):
+    def __init__(self, lang_code: str, debug: bool = False, colored_output: bool = False, emoji_enabled: bool = False):
         self.lang = lang_code
         self.debug = debug
         self.colored_output = colored_output
+        self.emoji_enabled = emoji_enabled
         if self.debug:
             import inspect
             from datetime import datetime
@@ -20,9 +21,13 @@ class lang:
                 BLUE = Fore.RESET
                 RESET = Fore.RESET
             formatted_message = f"{BLUE}[{timestamp}] [{Path(__file__).relative_to(Path(__file__).parent).as_posix()}] [{inspect.currentframe().f_code.co_name}] [INFO] - Localization lib initialized in debug mode.{RESET}"
+            if self.emoji_enabled:
+                formatted_message = f'🔵 {formatted_message}'
             print(formatted_message)
             timestamp = datetime.now()
             formatted_message = f"{BLUE}[{timestamp}] [{Path(__file__).relative_to(Path(__file__).parent).as_posix()}] [{inspect.currentframe().f_code.co_name}] [INFO] - Current language is: {self.lang}.{RESET}"
+            if self.emoji_enabled:
+                formatted_message = f'🔵 {formatted_message}'
             print(formatted_message)
 
     def get(self, caller: str = None, function: str = None, key: str = None, return_description: bool = False, return_metadata: bool = False, **kwargs):
@@ -42,8 +47,8 @@ class lang:
         self.metadata = self.lang_data.get('metadata', {})
         if return_metadata:
             return self.metadata
-        function_data = (self.lang_data.get(str(self.caller), {}).get(function, {}))
-
+        caller_data = self.lang_data.get(self.caller.as_posix(), {})
+        function_data = caller_data.get(function, {})
         if not isinstance(function_data, dict):
             return function_data
 
@@ -94,6 +99,8 @@ class lang:
                 BLUE = Fore.RESET
                 RESET = Fore.RESET
             formatted_message = f"{BLUE}[{timestamp}] [{Path(__file__).relative_to(Path(__file__).parent).as_posix()}] [{inspect.currentframe().f_code.co_name}] [INFO] - Found language file '{language_file}' for caller: '{self.caller.as_posix()}' and function: '{self.function}'.{RESET}"
+            if self.emoji_enabled:
+                formatted_message = f'🔵 {formatted_message}'
             print(formatted_message)
         return language_file.absolute()
 
@@ -117,5 +124,7 @@ class lang:
                     BLUE = Fore.RESET
                     RESET = Fore.RESET
                 formatted_message = f"""{BLUE}[{timestamp}] [{Path(__file__).relative_to(Path(__file__).parent).as_posix()}] [{inspect.currentframe().f_code.co_name}] [INFO] - Loading data of language file '{self.lang_path}' for caller: '{self.caller.as_posix()}' and function: '{self.function}'.{RESET}"""
+                if self.emoji_enabled:
+                    formatted_message = f'🔵 {formatted_message}'
                 print(formatted_message)
             return yaml.safe_load(lang_file) or {}

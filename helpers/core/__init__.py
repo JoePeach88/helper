@@ -62,7 +62,7 @@ class coreHelper:
                 connection_test, user = test_github_connection()
                 if connection_test:
                     return lang.get(key='token', user=user, section=section, option=option, value=value)
-            return lang.get(key='set', user=user, section=section, option=option, value=value)
+            return lang.get(key='set', section=section, option=option, value=value)
 
         def rm(self, section: str, option: str = None):
             loader.remove(section, option)

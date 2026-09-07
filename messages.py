@@ -140,11 +140,6 @@ def less(string: str):
             
         return full_chars in [b'\r', '\n'], full_chars == b':e'
 
-    # Check if the string is a file path and read its content
-    if Path(string).exists():
-        with open(string, 'r', encoding='utf-8') as file:
-            string = file.read()
-
     string_lines = string.split('\n')
     count = 0
     max_lines = LESS_LINES
