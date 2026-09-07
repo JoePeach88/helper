@@ -16,7 +16,7 @@ headers = {
 }
 
 if GITHUB_TOKEN in ['', ' '] or not GITHUB_TOKEN:
-    print_message('GitHub token not set, update, install and check functions of modules and core modules will work incorrect, set token via `helper core config set core:remote gh_api_token <your token here>`.', WARNING, force=True)
+    print_message(lang.get(), WARNING, force=True)
 
 
 def github_repo_to_ssh(repo_url: str):
@@ -109,7 +109,7 @@ def detect_builtin():
     builtin_helpers = []
     for helper in helpers:
         if helper['builtin']:
-            builtin_helpers.append(Path(helper['file']).parent.relative_to(Path("./").resolve()))
+            builtin_helpers.append(Path(helper['file']).parent.relative_to(Path(__file__).parent.parent.parent.resolve()))
 
     # Extends with core helper module and documentation
     builtin_helpers.extend([Path('helpers/__init__.py'), Path('helpers/README.md')])

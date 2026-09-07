@@ -94,11 +94,9 @@ messages.py:
 
 # Thats for helpers init
 __init__.py:
-  Helper.man:
-    items: "Модуль '{helper_name}' не имеет доступного мануала."
+  Helper.man: "Модуль '{helper_name}' не имеет доступного мануала."
   Helper.requirements:
     items:
       reqs: "Зависимости модуля '{helper_name}':\n{reqs}"
       no_reqs: "Модуль '{helper_name}' не имеет зависимостей."
-  Helper.changes:
-    items: "Модуль '{helper_name}' не имеет доступного ченджлога."
+  Helper.changes: "Модуль '{helper_name}' не имеет доступного ченджлога."

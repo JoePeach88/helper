@@ -12,7 +12,7 @@ from localization import lang
 
 __version__ = '1.3.0'
 __version_name__ = 'autumn'
-__release__ = 'dev'
+__release__ = 'stable'
 __product_name__ = 'helper'
 __required_python__ = (3, 7)
 

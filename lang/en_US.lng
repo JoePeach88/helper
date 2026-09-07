@@ -5,8 +5,7 @@ metadata:
   lang: English
 
 cli.py:
-  __main__: 
-    items: "Python version ({py_version}) not compatible with {product_name} CLI, required version <= {required_version}."
+  __main__: "Python version ({py_version}) not compatible with {product_name} CLI, required version <= {required_version}."
 
 handler.py:
   description: |
