@@ -1,2 +1,2 @@
 @echo off
-python "%~dp0/cli.py" %*
+"%~dp0/.venv/Scripts/python.exe" "%~dp0/cli.py" %*
