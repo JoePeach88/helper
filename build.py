@@ -74,7 +74,7 @@ def windows_installer(structure: list, requirements: list):
         '\tWrite-Host "Structure prepared."\n',
         '\tWrite-Host "Creating venv..."\n',
         '\tpython -m venv $location\\.venv\n',
-        '\t& "$location\\.venv\Scripts\\activate.bat"\n'
+        '\t& "$location\\.venv\Scripts\\activate.ps1"\n'
         '\tWrite-Host "Created."\n',
         '\tWrite-Host "Installing dependencies..."\n'
     ])
