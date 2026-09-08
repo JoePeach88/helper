@@ -5,8 +5,7 @@ metadata:
   lang: Русский
 
 cli.py:
-  __main__: 
-    items: "Версия Python ({py_version}) не совместима с {product_name} CLI, необходимая версия <= {required_version}."
+  __main__: "Версия Python ({py_version}) не совместима с {product_name} CLI, необходимая версия <= {required_version}."
 
 handler.py:
   description: |
@@ -34,10 +33,8 @@ handler.py:
     `helper <module_name> man` - для просмотра мануала к модулю.
 
     `helper <module_name> help` - для просмотра всех известных методов модуля и их алиасов.
-  _get_attribute:
-    items: "\n\nДоступный мануал:\n"
-  helper_handler:
-    items: "Затраченное время: {measure_time}."
+  _get_attribute: "\n\nДоступный мануал:\n"
+  helper_handler: "Затраченное время: {measure_time}."
   detect_handler:
     items:
       new_version: "> ℹ️ **INFO:** New helper version ({version}) available, install it via command below:\n\n```\nhelper core update install\n```"
@@ -47,8 +44,7 @@ handler.py:
       aliases: "\n**{method}**\n> Алиасы: {alias}\n---\n"
       aliases_module: "\n**{method}** [модуль]\n> Алиасы: {alias}\n---\n"
       doc: "\n\n## Доступные методы:\n\n---\n{module_name} {module_formatted_methods}"
-  version_handler:
-    items: | 
+  version_handler: | 
       Версия CLI: {version} [{version_name}] ({release})
       
       Модули:

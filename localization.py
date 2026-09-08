@@ -49,11 +49,12 @@ class lang:
             return self.metadata
         caller_data = self.lang_data.get(self.caller.as_posix(), {})
         function_data = caller_data.get(function, {})
-        if not isinstance(function_data, dict):
-            return function_data
 
         if "items" not in function_data and "description" not in function_data:
-            return function_data
+            if isinstance(function_data, str):
+                return function_data.format(**kwargs).strip()
+            else:
+                return function_data
 
         description = function_data.get("description")
 

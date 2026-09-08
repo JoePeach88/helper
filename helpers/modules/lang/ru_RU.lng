@@ -6,7 +6,7 @@ metadata:
   lang: "Русский"
 
 helpers/modules/__init__.py:
-  modulesHelper: "Модуль '{module}' уже установлен."
+  modulesHelper: "**Модуль для работы с модулями.**"
   modulesHelper.ls:
     description: |
       **Метод отображает все доступные модули.**
