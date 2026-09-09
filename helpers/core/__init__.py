@@ -105,11 +105,11 @@ class coreHelper:
                 print_message(f"Download link is: {core_remote_download_link}.")
                 break
 
-            if core_remote_version and (__version__ < core_remote_version or (__version__ <= core_remote_version and 'dev' in core_last_release['tag_name'])):
+            if core_remote_version and (__version__ < core_remote_version or (__version__ <= core_remote_version and __release__ == 'dev')):
                 update_data = {
-                    'name': 'core',
-                    'current_version': __version__,
-                    'remote_version': core_remote_version + (' (dev)' if is_dev_release else ''),
+                    'name': 'core update',
+                    'current_version': f"{__version__} ({__release__})",
+                    'remote_version': core_remote_version + (' (dev)' if is_dev_release else ' (stable)'),
                 }
                 if not pretty:
                     update_data.update({
@@ -125,7 +125,7 @@ class coreHelper:
         def install(self, dev: bool = False):
             core_for_update = self.check(pretty=False, dev=dev)
             if not core_for_update:
-                return "Nothing to install."
+                return lang.get()
             if core_for_update:
                 core_for_update = core_for_update[0]
                 return install_update(core_for_update['remote_version'], core_for_update['remote_download_link'])
