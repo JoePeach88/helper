@@ -76,7 +76,7 @@ class lang:
 
 
     def _find_language_file(self):
-        language_directory = self.caller.parent / "lang"
+        language_directory = (Path(__file__).parent / Path(self.caller.parent / "lang")).absolute()
         language_path = language_directory / f"{self.lang}.lng"
         language_file = None
 
