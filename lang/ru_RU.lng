@@ -26,7 +26,7 @@ handler.py:
 
     `helper debug` - для просмотра дебаг информации.
 
-    `helper core selfcheck` - для проверки работоспособности CLI.
+    `helper core selfcheck` или `helper selfcheck` - для проверки работоспособности CLI.
 
     `helper modules ls` - для просмотра всех установленных модулей.
 
