@@ -14,7 +14,7 @@ __version__ = '1.3.0'
 __version_name__ = 'autumn'
 __release__ = 'stable'
 __product_name__ = 'helper'
-__required_python__ = (3, 7)
+__required_python__ = (3, 11)
 
 
 def get_system_based_value(string: str, default: str = None, return_default: bool = False):

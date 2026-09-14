@@ -161,10 +161,13 @@ EOF
 
         commands.extend([
             '\techo "Structure prepared."\n',
-            '\tWrite-Host "Creating venv..."\n',
-            '\tpython -m venv $location/.venv\n',
+            '\techo "Installing python-venv package..."\n',
+            '\tsudo apt-get install python3-venv -y\n'
+            '\techo "Package installed."\n',
+            '\techo "Creating venv..."\n',
+            '\tpython3 -m venv $location/.venv\n',
             '\tsource $location/.venv/bin/activate\n'
-            '\tWrite-Host "Created."\n',
+            '\techo "Created."\n',
             '\techo "Installing dependencies..."\n'
         ])
         for requirement in requirements:

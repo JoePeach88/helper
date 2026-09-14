@@ -204,10 +204,19 @@ def detect_handler(method, arguments):
                     print(changes_content)
                 else:
                     less(changes_content)
+    elif method in ['selfcheck']:
+        print_message("Initiating builtin 'core' helper to initialize selfcheck.")
+        core_prepared = _prepare_helper('core')
+        core_module = _find_module('helpers.core')
+        core_settings = _find_settings('core')
+        core_helper = getattr(core_module, core_prepared)
+        core_helper = core_helper(core_settings)
+        print_message("Helper 'core' initiated.")
+        print(core_helper.selfcheck())
     elif method in ['help', '--help'] or method is None:
         _print_help(lang.get(function='description'))
     else:
-        print_message(f"Unknown keyword '{method}'.", WARNING, True)
+        print_message(lang.get(key='unknown_method', method=method), WARNING, True)
 
 
 def prepare_doc(obj, helper = None):
