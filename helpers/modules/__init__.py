@@ -253,7 +253,7 @@ class modulesHelper:
                     link = helper.__module_link__
                     platforms = '\n'.join(helper.__module_compatibility__)
                     disabled_methods = helper.__module_disabled_methods__
-                    description = obj.__doc__
+                    description = lang.get(Path(__file__).parent.parent / f'{module}/__init__.py', f'{module}Helper', return_description=True) or obj.__doc__
                     if description:
                         description = re.sub(r" \s+", "", description).strip()
                     methods = dir(obj)
@@ -655,7 +655,7 @@ class modulesHelper:
                     if translated and 'Error 500 (Server Error)' not in translated:
                         return translated.replace('»', "'").replace('«', "'")
                     else:
-                        print_message(f"There war error when trying to translate value '{value}'", ERROR)
+                        print_message(f"There was error when trying to translate value '{value}'", ERROR)
 
                 return value
 

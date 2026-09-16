@@ -20,6 +20,14 @@ helpers/core/__init__.py:
       not_connected: |
         GitHub connection status: Not connected.
         GitHub token set: {status}
+  coreHelper.packages:
+    description: |
+      **Method returns pip installed packages for helper.**
+      ```
+      Usage:
+          core packages
+      ```
+    items: null
   coreHelper.config: "**Module to manipulate helper config parameters.**"
   coreHelper.config.get:
     description: |

@@ -20,6 +20,13 @@ helpers/core/__init__.py:
       not_connected: |
         Статус подключения GitHub: Не подключено.
         GitHub токен: {status}
+  coreHelper.packages:
+    description: |
+      **Метод возвращает список установленных пакетов pip для работы helper.**
+      ```
+      Использование:
+          core packages
+      ```
   coreHelper.config: "**Модуль для управления параметрами конфигурации помощника.**"
   coreHelper.config.get:
     description: |

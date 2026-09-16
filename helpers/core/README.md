@@ -1,6 +1,6 @@
 # core
 
-None
+**Module to work with helper core.**
 
 ## Methods list
 
@@ -14,6 +14,7 @@ None
 - [ls](#ls)
 - [rm](#rm)
 - [view](#view)
+- [packages](#packages)
 - [selfcheck](#selfcheck)
 - [**update**](#update) [module]
 - [check](#check)
@@ -112,6 +113,14 @@ core logging rm <log_file>
 ```
 Usage:
 core logging view <log>
+```
+
+### packages
+
+**Method returns pip installed packages for helper.**
+```
+Usage:
+core packages
 ```
 
 ### selfcheck

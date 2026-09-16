@@ -45,9 +45,12 @@ def windows_installer(structure: list, requirements: list):
                 new_req_content = []
                 with open(item, 'r', encoding='utf-8') as req_file:
                     for req_line in req_file.readlines():
-                        for ignore_package in pip_ignore_win:
-                            if ignore_package not in req_line:
-                                new_req_content.append(req_line)
+                        if pip_ignore_win:
+                            for ignore_package in pip_ignore_win:
+                                if ignore_package not in req_line:
+                                    new_req_content.append(req_line)
+                        else:
+                            new_req_content.append(req_line)
                     b64 = base64.b64encode('\n'.join(new_req_content).encode("utf-8")).decode("utf-8")
             else:
                 with open(item, "rb") as f:
@@ -116,14 +119,17 @@ def unix_installer(structure: list, requirements: list):
         else:
             if requirements:
                 new_req_content = []
-                with open(item, 'r', encoding='utf-8') as req_file:
+                with open(item.absolute(), 'r', encoding='utf-8') as req_file:
                     for req_line in req_file.readlines():
-                        for ignore_package in pip_ignore_unix:
-                            if ignore_package not in req_line:
-                                new_req_content.append(req_line)
+                        if pip_ignore_unix:
+                            for ignore_package in pip_ignore_unix:
+                                if ignore_package not in req_line:
+                                    new_req_content.append(req_line)
+                        else:
+                            new_req_content.append(req_line)
                     b64 = base64.b64encode('\n'.join(new_req_content).encode("utf-8")).decode("utf-8")
             else:
-                with open(item, "rb") as f:
+                with open(item.absolute(), "rb") as f:
                     b64 = base64.b64encode(f.read()).decode("utf-8")
             if f"""\tbase64 --decode << 'EOF' > $location/{item.as_posix()}
 {b64}
@@ -162,11 +168,12 @@ EOF
         commands.extend([
             '\techo "Structure prepared."\n',
             '\techo "Installing python-venv package..."\n',
+            '\tsudo apt-get update\n',
             '\tsudo apt-get install python3-venv -y\n'
             '\techo "Package installed."\n',
             '\techo "Creating venv..."\n',
             '\tpython3 -m venv $location/.venv\n',
-            '\tsource $location/.venv/bin/activate\n'
+            '\tsource "$location/.venv/bin/activate"\n'
             '\techo "Created."\n',
             '\techo "Installing dependencies..."\n'
         ])
@@ -181,7 +188,7 @@ EOF
             f"\t\trm -f \"$0\"\n",
             "\t\tinstall_location=$(realpath $location)\n",
             f"\t\techo $PATH | grep -q \"$install_location\" && echo \"export PATH=\\\"\$PATH:$install_location\\\"\" >> ~/.{systems[system]} && source ~/.{systems[system]}\n",
-            "\t\tchmod +x $install_location/helper\n",
+            '\t\tchmod +x "$install_location/helper"\n',
             "\t\techo \"Usage:\n",
             "\thelper version - to view information about helper cli version and it installed modules.\n",
             "\thelper debug - to view cli debug information.\n",

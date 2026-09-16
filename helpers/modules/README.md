@@ -1,6 +1,6 @@
 # modules
 
-None
+**Module to work with helper modules.**
 
 ## Methods list
 

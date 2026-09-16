@@ -1,2 +1,2 @@
 #!/bin/bash
-"$(dirname "$0")/.venv/Scripts/python3" "$(dirname "$0")/cli.py" "$@"
+"$(dirname "$0")/.venv/bin/python3" "$(dirname "$0")/cli.py" "$@"

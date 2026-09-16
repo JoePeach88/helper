@@ -268,7 +268,11 @@ def prepare_doc(obj, helper = None):
         documentation += lang.get(key='doc', module_name = module_name, module_formatted_methods = f'\n{module_name} '.join(formatted_methods))
     else:
         if not isinstance(obj, str) and obj:
-            documentation = re.sub(r" \s+", "", lang.get(helper.module.__file__, obj.__qualname__, return_description=True) or obj.__doc__).strip()
+            doc = lang.get(helper.module.__file__, obj.__qualname__, return_description=True) or obj.__doc__
+            if doc:
+                documentation = re.sub(r" \s+", "", doc).strip()
+            else:
+                return None
         else:
             documentation = obj
     return documentation if documentation else None

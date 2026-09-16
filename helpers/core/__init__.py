@@ -1,6 +1,7 @@
 import pandas as pd
 import glob
 import os
+import subprocess
 from pathlib import Path
 from env import __version__, __release__, LOGS_PATH
 from helpers import mask, print_message, print_choices, print_choice, render_code, INFO, WARNING, ERROR, loader, SYSTEM_PLATFORM, get_system_based_value, spinning_loader, lang, BASE_LIBRARY
@@ -35,6 +36,20 @@ class coreHelper:
         github_connection_status, user = test_github_connection()
         gh_token = True if config.get('core:remote', 'gh_api_token') else False
         return lang.get(key=('connected' if github_connection_status else 'not_connected'), status=BASE_LIBRARY['yes' if gh_token else 'no'], user=user) if pretty else {'github_connection_status': github_connection_status, 'gh_token_set': gh_token}
+
+    def packages(self, pretty: bool = True):
+        result = subprocess.run(["pip", "list"], capture_output=True, text=True)
+        result = result.stdout
+        packages = []
+        results = result.split('\n')
+        refactored_results = []
+        for item in results:
+            if item:
+                refactored_results.append(" ".join(item.split()))
+        for item in refactored_results[2:]:
+            item_splitted = item.split(' ')
+            packages.append({'name': item_splitted[0], 'version': item_splitted[1]})
+        return pd.DataFrame(packages).to_string(index=False, justify='right') if pretty else packages
 
     class config:
         def __init__(self, global_settings: dict, settings: dict):
