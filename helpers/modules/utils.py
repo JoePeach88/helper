@@ -3,8 +3,6 @@ import tarfile
 import re
 import shutil
 import tempfile
-import hashlib
-import math
 import yaml
 import subprocess
 import sys
@@ -13,6 +11,7 @@ from pathlib import Path
 from env import UNPACK_FILE_FILTER
 from helpers import print_message, print_choice, WARNING, ERROR, HELPERS_DIR, BASE_LIBRARY, install_requirements, get_system_based_value, lang
 from helpers.core.utils import download_file, retrieve_json, github_url_to_releases_api, github_repo_to_ssh, test_github_connection
+from utils import format_bytes, get_dir_size, get_file_sha256
 
 
 def _run_commands(commands, phase, command_kind, scenario_type):
@@ -54,28 +53,6 @@ def _run_scenario(phase, scenario, module_name, scenario_type):
         status = True
 
     return status
-
-
-def format_bytes(size_bytes):
-    if size_bytes == 0:
-        return "0B"
-    units = BASE_LIBRARY['units']
-    i = int(math.floor(math.log(size_bytes, 1024)))
-    p = math.pow(1024, i)
-    s = round(size_bytes / p, 2)
-    return f"{s} {units[i]}"
-
-def get_dir_size(path='.'):
-    root_directory = Path(path)
-    return sum(f.stat().st_size for f in root_directory.rglob('*') if f.is_file())
-
-
-def get_file_sha256(file: str):
-    sha256_hash = hashlib.sha256()
-    with open(file, "rb") as f:
-        for byte_block in iter(lambda: f.read(65536), b""):
-            sha256_hash.update(byte_block)
-    return sha256_hash.hexdigest()
 
 
 def install_module(module_name: str, module_link: str, module_version: str = None, link_type: str = 'url', skip_check: bool = False, force: bool = False):
@@ -236,7 +213,13 @@ def uninstall_module(module_name: str, force: bool = False):
     return lang.get(key='uninstalled', module=module_name)
 
 
-def pack_module(module_name: str, module_version: str, location: str):
+def pack_module(module_name: str, module_version: str, ignore_list: list, location: str):
+    def ignore_list_filter(member):
+        for ignore in ignore_list:
+            if re.match(f'.*{ignore}', member.name):
+                return None
+        return member
+
     module_path = Path(HELPERS_DIR, module_name).absolute()
 
     if not module_path.exists():
@@ -251,7 +234,7 @@ def pack_module(module_name: str, module_version: str, location: str):
         archive = HELPERS_DIR / f"{module_name}-{module_version}.tar.gz"
 
     with tarfile.open(archive, mode="w:gz") as tar:
-        tar.add(module_path, arcname=f'{module_name}-{module_version}')
+        tar.add(module_path, arcname=f'{module_name}-{module_version}', filter=ignore_list_filter)
     return lang.get(key='packed', archive=archive)
 
 def determine_type(input_string):

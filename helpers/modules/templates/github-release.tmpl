@@ -33,6 +33,6 @@ jobs:
         with:
           tag_name: ${{{{ github.ref }}}}
           release_name: {module} v.${{{{ github.ref }}}} ${{{{ steps.check_type.outputs.is_prerelease == 'true' && '(dev)' || '(stable)' }}}}
-          body_path:  ${{{{ hashFiles('./CHANGELOG.md') != '' && ./CHANGELOG.md || '' }}}}
+          body_path:  ${{{{ hashFiles('./CHANGELOG.md') != '' && './CHANGELOG.md' || '' }}}}
           draft: false
           prerelease: ${{{{ steps.check_type.outputs.is_prerelease == 'true' }}}}

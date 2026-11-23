@@ -10,9 +10,9 @@ from typing import Any, Optional
 from localization import lang
 
 
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 __version_name__ = 'autumn'
-__release__ = 'stable'
+__release__ = 'dev'
 __product_name__ = 'helper'
 __required_python__ = (3, 11)
 
@@ -108,7 +108,7 @@ language = en_US
 [core:remote]
 gh_api_token = 
 pip_proxy = 
-pip_break_system_packages = False
+pip_params = False
 update_check = False
 
 [core:optimization]
@@ -117,6 +117,8 @@ modules_filter = ^.*.$
 hrdrm_enabled = False
 gc_enabled = True
 md_return_output = False
+cache_enabled = False
+cache_location = 
 
 [core:logging]
 logs_path = {Path(Path(__file__).parent / 'logs').as_posix()}
@@ -140,7 +142,7 @@ MORE_STYLE = get_system_based_value(loader.get('core:ui', 'more', '---MORE---'))
 # Remote
 GITHUB_TOKEN = get_system_based_value(loader.get('core:remote', 'gh_api_token', ''))
 PIP_PROXY = get_system_based_value(loader.get('core:remote', 'pip_proxy', ''))
-PIP_BREAK_SYSTEM_PACKAGES = get_system_based_value(loader.get('core:remote', 'pip_break_system_packages', 'False')) == 'True'
+PIP_PARAMS = get_system_based_value(loader.get('core:remote', 'pip_params', ''))
 UPDATE_CHECK = get_system_based_value(loader.get('core:remote', 'update_check', 'False')) == 'True'
 
 # Optimization
@@ -149,9 +151,11 @@ UNPACK_FILE_FILTER = get_system_based_value(loader.get('core:optimization', 'mod
 HRDRM_ENABLED = get_system_based_value(loader.get('core:optimization', 'hrdrm_enabled', 'False')) == 'True'
 GC_ENABLED = get_system_based_value(loader.get('core:optimization', 'gc_enabled', 'True')) == 'True'
 MD_RETURN_OUTPUT = get_system_based_value(loader.get('core:optimization', 'md_return_output', 'False')) == 'True'
+CACHE_ENABLED = get_system_based_value(loader.get('core:optimization', 'cache_enabled', 'False')) == 'True'
+CACHE_LOCATION = get_system_based_value(loader.get('core:optimization', 'cache_location', (Path.home() / '.helper/cache').as_posix()))
 
 # Logging
-LOGS_PATH = Path(get_system_based_value(loader.get('core:logging', 'logs_path', f'{Path(__file__).parent}/logs'))).absolute()
+LOGS_PATH = Path(get_system_based_value(loader.get('core:logging', 'logs_path', f'{Path(__file__).parent}/logs'))).as_posix()
 LOGS_LEVELS = loader.get('core:logging', 'logs_levels', 'ERROR', split=True)
 DEBUG = get_system_based_value(loader.get('core:logging', 'debug', 'False')) == 'True'
 EMOJI_ENABLED = get_system_based_value(loader.get('core:logging', 'emoji_enabled', 'True')) == 'True'

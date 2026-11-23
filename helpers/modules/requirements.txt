@@ -1,7 +1,7 @@
 beautifulsoup4==4.15.0
 deep_translator==1.11.4
-GitPython==3.1.62
-pandas==3.0.5
+GitPython==3.2.1
+pandas==3.1.1
 pipreqs==0.5.0
 psutil==7.0.0
 pytest==9.1.1

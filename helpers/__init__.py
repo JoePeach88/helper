@@ -1,10 +1,9 @@
-import os
 import importlib.util
 import sys
 import re
 import subprocess
 from pathlib import Path
-from env import loader, config_file, SYSTEM_PLATFORM, HRDRM_ENABLED, PIP_PROXY, PIP_BREAK_SYSTEM_PACKAGES, get_system_based_value, LANGUAGE, lang
+from env import loader, config_file, SYSTEM_PLATFORM, HRDRM_ENABLED, PIP_PROXY, get_system_based_value, LANGUAGE, lang
 from difflib import get_close_matches
 
 
@@ -14,6 +13,7 @@ CRASH_COUNTER = 0
 if str(HELPERS_PARENT_DIR) not in sys.path:
     sys.path.insert(0, str(HELPERS_PARENT_DIR))
 from messages import mask, print_message, print_choices, print_choice, render_code, render_md, spinning_loader, WARNING, ERROR, SUCCESS, INFO, BASE_LIBRARY
+
 
 def install_requirements(module_name: str, requirements_file: str):
     try:
@@ -25,8 +25,6 @@ def install_requirements(module_name: str, requirements_file: str):
             '-r',
             requirements_file,
         ]
-        if PIP_BREAK_SYSTEM_PACKAGES:
-            command.extend(['--break-system-packages'])
         if PIP_PROXY:
             command.extend(['--proxy', PIP_PROXY])
         process = subprocess.Popen(command, stdout=subprocess.PIPE, text=True)
@@ -49,93 +47,157 @@ def install_requirements(module_name: str, requirements_file: str):
 
 
 def _load_modules_from_directory(directory_path: str, package: str = None, force: bool = True, install_reqs: bool = False):
-    module_files = [dir for dir in Path(os.path.join(directory_path)).iterdir() if Path(dir).name != 'helpers' and Path(dir).is_dir()]
-    for module in module_files:
-        if Path(module).name.startswith('_'):
-            module_files.remove(module)
+    global CRASH_COUNTER
+
+    directory = Path(directory_path)
+    module_dirs = sorted(
+        path
+        for path in directory.iterdir()
+        if path.is_dir()
+        and path.name != Path(__file__).resolve().parent.name
+        and not path.name.startswith("_")
+    )
 
     modules = []
     disabled_modules = []
     settings = []
-    for file_path in module_files:
-        file_name = os.path.basename(file_path)
-        module_name = os.path.splitext(file_name)[0]
+
+    loader.config.read(config_file)
+    config = loader.config
+
+    for module_dir in module_dirs:
+        module_name = module_dir.name
 
         if module_name == "__init__":
             continue
 
-        module_settings = {}
+        matching_sections = [
+            section
+            for section in config.keys()
+            if re.match(rf"^{re.escape(module_name)}:?.*$", section)
+        ]
 
-        loader.config.read(config_file)
-        for key in loader.config.keys():
-            if re.match(f'^{module_name}[:]?.*$', key):
-                module_settings = dict(dict(loader.config).get(key, {}).items())
-                settings.append({key: module_settings})
-        
-        module_enabled = 'True'
-        for setting in settings:
-            module_enabled = setting.get(module_name, {}).get('enabled', 'True')
+        for section in matching_sections:
+            settings.append({section: dict(config[section].items())})
+
+        module_enabled = config.get(module_name, "enabled", fallback="True")
+
         try:
             if package:
-                full_module_name = f"{package}.{module_name}"
-                module = importlib.import_module(full_module_name)
+                loaded_module = importlib.import_module(
+                    f"{package}.{module_name}"
+                )
             else:
-                spec = importlib.util.spec_from_file_location(module_name, file_path)
-                module = importlib.util.module_from_spec(spec)
-                sys.modules[module_name] = module
-                spec.loader.exec_module(module)
+                init_file = module_dir / "__init__.py"
+                spec = importlib.util.spec_from_file_location(
+                    module_name,
+                    init_file,
+                    submodule_search_locations=[str(module_dir)],
+                )
+                if spec is None or spec.loader is None:
+                    raise ImportError(f"Could not create an import spec for {init_file}")
 
-            if module_enabled == 'True':
-                if 'all' in module.__module_compatibility__ or SYSTEM_PLATFORM in module.__module_compatibility__:
-                    if module not in modules:
-                        modules.append(module)    
-                    if module.__module_status__ in ['development', 'dev', 'testing', 'test']:
-                        if force:
-                            print_message(f"Module '{module_name}' loaded, but may not work correctly because it is under development.", WARNING)
-                    elif module.__module_status__ in ['deprecated', 'unstable', 'unsupported']:
-                        if force:
-                            print_message(f"Module '{module_name}' loaded, but may not work correctly because it is not supported anymore, better way is delete it via command 'modules rm {module_name}'.", WARNING)
-                    elif module.__module_status__ in ['stable', 'supported', 'prod']:
-                        if force:
-                            print_message(f"Loaded module: '{module_name}'.")
-                    else:
-                        if force:
-                            print_message(f"Module '{module_name}' loaded, but have unknown stability status.", WARNING)
-                else:
-                    if module not in disabled_modules:
-                        disabled_modules.append(module)
-                    if force:
-                        print_message(f"Module '{module_name}' not supported by this platform ({SYSTEM_PLATFORM}), module not loaded.", WARNING)
+                loaded_module = importlib.util.module_from_spec(spec)
+                sys.modules[module_name] = loaded_module
+                spec.loader.exec_module(loaded_module)
+
+            if module_enabled != "True":
+                disabled_modules.append(loaded_module)
+                continue
+
+            compatibility = loaded_module.__module_compatibility__
+            status = loaded_module.__module_status__
+
+            if "all" not in compatibility and SYSTEM_PLATFORM not in compatibility:
+                if force:
+                    print_message(
+                        f"Module '{module_name}' not supported by this platform "
+                        f"({SYSTEM_PLATFORM}), module not loaded.",
+                        WARNING,
+                    )
+                continue
+
+            modules.append(loaded_module)
+
+            if status in {"development", "dev", "testing", "test"}:
+                message = (
+                    f"Module '{module_name}' loaded, but may not work correctly "
+                    "because it is under development."
+                )
+                level = WARNING
+            elif status in {"deprecated", "unstable", "unsupported"}:
+                message = (
+                    f"Module '{module_name}' loaded, but may not work correctly "
+                    "because it is not supported anymore; better way is delete it "
+                    f"via command 'modules rm {module_name}'."
+                )
+                level = WARNING
+            elif status in {"stable", "supported", "prod"}:
+                message = f"Loaded module: '{module_name}'."
+                level = None
             else:
-                if module not in disabled_modules:
-                    disabled_modules.append(module)
+                message = (
+                    f"Module '{module_name}' loaded, but has unknown stability status."
+                )
+                level = WARNING
+
+            if force:
+                print_message(message, level) if level else print_message(message)
 
         except ModuleNotFoundError:
-            reqs_path = Path(file_path) / 'requirements.txt'
-            if reqs_path.exists():
-                if install_reqs and CRASH_COUNTER <= 5:
-                    CRASH_COUNTER += 1
-                    if force:
-                        print_message(f"[Try {CRASH_COUNTER}/5]Module was not loaded correctly, cause some dependencies was not found, installing packages from module`s '{module_name}' requirements.txt...", WARNING)
-                    install_requirements(module_name, reqs_path)
-                    return _load_modules_from_directory(directory_path, package, install_reqs=install_reqs)
-                else:
-                    if force:
-                        print_message(f"Module '{module_name}' not loaded cause it missing packages from requirements and HRDRM is disabled.", WARNING)
-            else:
+            requirements_file = module_dir / "requirements.txt"
+
+            if requirements_file.exists() and install_reqs and CRASH_COUNTER < 5:
+                CRASH_COUNTER += 1
                 if force:
-                    print_message(f"Cannot load module '{module_name}' cause it missing some packages and cannot be resolved via `helper requirements dynamic resolve method (HRDRM)`, please generate requirements manually via modules renderreq {module_name} and then execute helper CLI.", ERROR)
+                    print_message(
+                        f"[Try {CRASH_COUNTER}/5] Module '{module_name}' could not be "
+                        "loaded because dependencies are missing. Installing packages "
+                        f"from '{requirements_file}'...",
+                        WARNING,
+                    )
+
+                install_requirements(module_name, requirements_file)
+                return _load_modules_from_directory(
+                    directory_path,
+                    package=package,
+                    force=force,
+                    install_reqs=install_reqs,
+                )
+
+            if force:
+                if requirements_file.exists():
+                    print_message(
+                        f"Module '{module_name}' not loaded because required packages "
+                        "are missing and HRDRM is disabled.",
+                        WARNING,
+                    )
+                else:
+                    print_message(
+                        f"Cannot load module '{module_name}' because packages are "
+                        "missing and cannot be resolved via HRDRM. Generate "
+                        f"requirements with 'modules renderreq {module_name}' and "
+                        "then execute the helper CLI.",
+                        ERROR,
+                    )
 
         except AttributeError:
-            if module in modules:
-                modules.remove(module)
-            print_message(f"Module '{module_name}' not loaded cause some required helper attributes not found, suggesting it`s not a helper module.", WARNING)
-
-        except Exception as e:
             if force:
-                print_message(f"Error loading module '{module_name}': {e}", ERROR)
+                print_message(
+                    f"Module '{module_name}' not loaded because required helper "
+                    "attributes were not found; it may not be a helper module.",
+                    WARNING,
+                )
+
+        except Exception as exc:
+            if force:
+                print_message(
+                    f"Error loading module '{module_name}': {exc}",
+                    ERROR,
+                )
 
     return modules, disabled_modules, settings
+
 
 
 # To bypass double load through dynamic module loader
@@ -147,7 +209,8 @@ def _find_module(module_name: str):
     for module in MODULES:
         if module.__name__ == module_name:
             return module
-        
+
+
 def _find_disabled_module(module_name: str):
     for module in DISABLED_MODULES:
         if module.__name__ == module_name:
@@ -210,7 +273,7 @@ class Helper:
             print_message(f"Failed to initialize helper '{helper}': {e}", ERROR)
 
     def version(self):
-        return f"{self.module.__module_name__}: {self.module.__module_version__}"
+        return f"{self.module.__module_name__}: {self.module.__module_version__} ({self.module.__module_status__})"
 
     def man(self):
         readme = Path(self.module.__file__).parent / 'README.md'

@@ -144,6 +144,7 @@ The following names are reserved and must not be used for custom helper methods 
 
 - `no_less` - prints full output without using built-in `less`.
 - `not_pretty` - prints raw (non-pretty) output.
+- `debug` - sets debug mode.
 
 ## Nesting Rules
 

@@ -73,8 +73,10 @@ def test_github_connection():
     result = subprocess.run(["ssh", "-T", github_ssh], capture_output=True, text=True)
     result = result.stderr.strip()
     print_message(f"Returned output: '{result}', checking is it match pattern '{pattern}'.")
-    match = re.match(pattern, result)
-    return match is not None, match.group(1)
+    if result:
+        match = re.match(pattern, result)
+    user = match.group(1) if match else None
+    return match is not None, user
 
 
 def retrieve_json(url: str):
@@ -117,7 +119,7 @@ def detect_builtin():
 
 
 def detect_core():
-    core_files = ['lang', 'handler.py', 'cli.py', 'env.py', 'helper', 'helper.bat', 'README.md', 'requirements.txt', 'localization.py', 'messages.py', 'utils.py']
+    core_files = ['lang', 'changelogs', 'handler.py', 'cli.py', 'env.py', 'helper', 'helper.bat', 'README.md', 'requirements.txt', 'localization.py', 'messages.py', 'utils.py']
     core_files_paths = []
     for core_file in core_files:
         core_file_path = Path(core_file)

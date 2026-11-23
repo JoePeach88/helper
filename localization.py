@@ -42,7 +42,10 @@ class lang:
             function = "__main__"
         self.caller = Path(caller).relative_to(Path(__file__).parent)
         self.function = function
-        self.lang_path = self._find_language_file()
+        if self._find_language_file():
+            self.lang_path, self.fallback_file = self._find_language_file()
+        else:
+            return None
         self.lang_data = self._load_language_data()
         self.metadata = self.lang_data.get('metadata', {})
         if return_metadata:
@@ -50,7 +53,7 @@ class lang:
         caller_data = self.lang_data.get(self.caller.as_posix(), {})
         function_data = caller_data.get(function, {})
 
-        if "items" not in function_data and "description" not in function_data:
+        if ("items" not in function_data and "description" not in function_data) or isinstance(function_data, str):
             if isinstance(function_data, str):
                 return function_data.format(**kwargs).strip()
             else:
@@ -71,7 +74,7 @@ class lang:
             value = None
 
         if isinstance(value, str):
-            value = value.format(**kwargs).strip()
+            value = value.format(**kwargs).strip(" \t")
         return value
 
 
@@ -103,7 +106,7 @@ class lang:
             if self.emoji_enabled:
                 formatted_message = f'🔵 {formatted_message}'
             print(formatted_message)
-        return language_file.absolute()
+        return language_file.absolute(), fallback_files[0] if fallback_files else None
 
 
     def _load_language_data(self):

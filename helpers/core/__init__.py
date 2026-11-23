@@ -2,6 +2,7 @@ import pandas as pd
 import glob
 import os
 import subprocess
+import sys
 from pathlib import Path
 from env import __version__, __release__, LOGS_PATH
 from helpers import mask, print_message, print_choices, print_choice, render_code, INFO, WARNING, ERROR, loader, SYSTEM_PLATFORM, get_system_based_value, spinning_loader, lang, BASE_LIBRARY
@@ -38,7 +39,7 @@ class coreHelper:
         return lang.get(key=('connected' if github_connection_status else 'not_connected'), status=BASE_LIBRARY['yes' if gh_token else 'no'], user=user) if pretty else {'github_connection_status': github_connection_status, 'gh_token_set': gh_token}
 
     def packages(self, pretty: bool = True):
-        result = subprocess.run(["pip", "list"], capture_output=True, text=True)
+        result = subprocess.run([sys.executable, '-m', "pip", "list"], capture_output=True, text=True)
         result = result.stdout
         packages = []
         results = result.split('\n')

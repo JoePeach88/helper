@@ -2,7 +2,7 @@
 metadata:
   author: "JoePeach88"
   status: "stable"
-  version: "1.0.0"
+  version: "1.0.1"
   lang: "Русский"
 
 helpers/modules/__init__.py:
@@ -267,4 +267,4 @@ helpers/modules/utils.py:
   pack_module:
     items:
       not_found: "Модуль '{module}' не найден."
-      packed: "Модуль упакован в '{архив}'."
+      packed: "Модуль упакован в '{archive}'."

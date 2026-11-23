@@ -165,12 +165,34 @@ EOF
         for entry in structure:
             append_item(Path(entry), Path(entry) in requirements)
 
+        def install_package(package: str, start: str = '\t', end: str = '\n'):
+            commands_text = f"""
+if command -v apt-get &> /dev/null; then
+    sudo apt-get update && sudo apt-get install -y "{package}"
+elif command -v dnf &> /dev/null; then
+    sudo dnf install -y "{package}"
+elif command -v yum &> /dev/null; then
+    sudo yum install -y "{package}"
+elif command -v pacman &> /dev/null; then
+    sudo pacman -Sy --noconfirm "{package}"
+elif command -v zypper &> /dev/null; then
+    sudo zypper install -y "{package}"
+elif command -v apk &> /dev/null; then
+    sudo apk add --no-cache "{package}"
+else
+    echo "Error: No supported package manager found." >&2
+    exit 1
+fi"""
+            refactored_commands = []
+            for line in commands_text.splitlines():
+                refactored_commands.append(f"{start}{line}{end}")
+            return refactored_commands
+
         commands.extend([
             '\techo "Structure prepared."\n',
-            '\techo "Installing python-venv package..."\n',
-            '\tsudo apt-get update\n',
-            '\tsudo apt-get install python3-venv -y\n'
-            '\techo "Package installed."\n',
+            '\techo "Installing python-venv package..."' if system == 'Linux' else '',
+            ''.join(install_package('python3-venv')) if system == 'Linux' else '',
+            '\techo "Package installed."\n' if system == 'Linux' else '',
             '\techo "Creating venv..."\n',
             '\tpython3 -m venv $location/.venv\n',
             '\tsource "$location/.venv/bin/activate"\n'

@@ -46,7 +46,7 @@ from helpers import (
     lang,
     BASE_LIBRARY
 )
-from env import loader, PIP_PROXY, __version__, __release__
+from env import loader, PIP_PROXY, __version__, __release__, DEBUG
 from pathlib import Path
 
 
@@ -103,12 +103,13 @@ class modulesHelper:
 
     def ls(self, all: bool = False, pretty: bool = True):
         helpers_list = []
+        pretty_list = []
         helpers = self.helpers
         if all:
             helpers.extend(self.disabled_helpers)
         for module in helpers:
-            helpers_list.append(module.__name__.split('.')[-1])
-        return lang.get(helpers_len=len(helpers_list), helpers_list='\n'.join(helpers_list)) if pretty else helpers_list
+            helpers_list.append({'name': module.__name__.split('.')[-1], 'builtin': ('core' in module.__module_category__ or 'builtin' in module.__module_category__)})
+        return lang.get(helpers_len=len(helpers_list), helpers_list=pd.DataFrame(helpers_list).to_string(index=False, justify='right')) if pretty else helpers_list
 
     def info(self, module: str = None, pretty: bool = True):
         all_helpers = self.helpers
@@ -202,6 +203,7 @@ class modulesHelper:
         uninstall_scenario_path = Path(f"{module_path}/UNINSTALL.sc").absolute()
         langs_path = Path(f"{module_path}/lang").absolute()
         gitignore_path = Path(f"{module_path}/.gitignore").absolute()
+        helperignore_path = Path(f"{module_path}/.helperignore").absolute()
         lang_path = langs_path / 'en_US.lng'
         release_path = github_path / 'create-release.yml'
         self.rendertemplate('github-release', release_path, pretty = False, module = module)
@@ -209,6 +211,7 @@ class modulesHelper:
         self.rendertemplate('scenario', uninstall_scenario_path, pretty = False)
         self.rendertemplate('language', lang_path, pretty = False, author = author, version = version, module = module)
         self.rendertemplate('gitignore', gitignore_path, pretty = False)
+        self.rendertemplate('helperignore', helperignore_path, pretty = False)
         if self.rendertemplate('module', init_path, force = force, pretty = False, module = module, name = name, author = author, version = version, systems = ", ".join(f"'{system}'" for system in systems.split(","))):
             return lang.get(key='created', module=module)
         else:
@@ -243,6 +246,7 @@ class modulesHelper:
         all_helpers = self.helpers
         all_helpers.extend(self.disabled_helpers)
         # Change prefered language to en_US
+        current_lang = lang.lang
         lang.lang = 'en_US'
         if module:
             for helper in all_helpers:
@@ -315,9 +319,11 @@ class modulesHelper:
                                                                       version = version, platforms = platforms, methods_description = methods_description)
                     else:
                         print_message('Documentation template not exists, aborting md creation.', ERROR)
+                        lang.lang = current_lang
                         return lang.get(key='template_not_exists')
                     with open(module_readme, 'w' if module_readme.exists() else 'x', newline="\n", encoding='utf-8') as module_readme_file:
                         module_readme_file.write(documentation)
+                    lang.lang = current_lang
                     return lang.get(key='rendered', readme_path=module_readme.absolute())
 
     def renderreq(self, module: str):
@@ -348,28 +354,25 @@ class modulesHelper:
                         return lang.get(key='rendered', module=module, reqs=reqs)
 
     def renderhash(self, module: str):
-        def process_files(helper_path, directory, module, hash_list):
+        def process_files(helper_path, directory, ignore_list, hash_list):
             for item in directory.iterdir():
-                if item.name in ['.git', '.github', 'tests']:
+                if any(re.match(f'.*{ignore}', item.name) for ignore in ignore_list):
                     continue
+
+                if item.name in {".git", ".github", "tests"}:
+                    continue
+
                 if item.is_dir():
-                    process_files(helper_path, item, module, hash_list)
-                else:
-                    relative_path = item.relative_to(helper_path).parent
-                    file_name = item.name
-                    
-                    if file_name in ['SHA256', 'CHANGELOG.md', 'README.md']:
-                        continue
+                    process_files(helper_path, item, ignore_list, hash_list)
+                    continue
 
-                    file_parent = f'{relative_path.as_posix()}'
+                if item.name in {"SHA256", "CHANGELOG.md", "README.md"}:
+                    continue
 
-                    if file_parent == '.':
-                        full_path = f"{file_parent}/{file_name}"
-                    else:
-                        full_path = f"./{file_parent}/{file_name}"
+                relative_path = item.relative_to(helper_path).as_posix()
+                full_path = f"./{relative_path}"
+                hash_list.append({full_path: get_file_sha256(item)})
 
-                    hash_obj = {full_path: get_file_sha256(item)}
-                    hash_list.append(hash_obj)
             return hash_list
 
         all_helpers = self.helpers
@@ -379,7 +382,15 @@ class modulesHelper:
             for helper in all_helpers:
                 if helper.__name__.split('.')[-1] == module:
                     helper_path = Path(helper.__file__).parent
-                    hash_list = process_files(helper_path, helper_path, module, hash_list)
+                    helperignore_path = helper_path / '.helperignore'
+                    ignore_list = []
+                    if helperignore_path.exists():
+                        ignore_list = [
+                            line.strip()
+                            for line in Path(helperignore_path).read_text('utf-8').splitlines()
+                            if line.strip() and not line.strip().startswith("#")
+                        ]
+                    hash_list = process_files(helper_path, helper_path, ignore_list, hash_list)
                     hash_list_file = helper_path / 'SHA256'
                     with open(hash_list_file, 'w' if hash_list_file.exists() else 'x', newline="\n", encoding='utf-8') as f:
                         f.write(yaml.dump(hash_list))
@@ -432,9 +443,17 @@ class modulesHelper:
             self.rendermd(module)
             print_message("Rendering module hash table, please wait...", force=True)
             self.renderhash(module)
-            print_message(pack_module(module, module_version, location), force=True)
+            helperignore_path = Path(__file__).parent.parent / f'{module}/.helperignore'
+            ignore_list = []
+            if helperignore_path.exists():
+                ignore_list = [
+                    line.strip()
+                    for line in Path(helperignore_path).read_text('utf-8').splitlines()
+                    if line.strip() and not line.strip().startswith("#")
+                ]
+            return pack_module(module, module_version, ignore_list, location)
 
-    def push(self, module: str):
+    def push(self, module: str, skip_render: bool = False, rewrite_tag: bool = False):
         if module in ['core', 'modules']:
             return lang.get(key='builtin', module=module)
         module_info = self.info(module, pretty=False)
@@ -442,22 +461,36 @@ class modulesHelper:
             return
 
         module_author = module_info['author']
+        module_name = module_info['name']
         module_version = module_info['version']
         module_link = module_info['link']
         module_path = module_info['path']
 
-        connection_test, user = test_github_connection()
+        # print_message(f"Retrieving helpers to add '{module}' to repo...")
+        # helpers_repo_instance = {
+        #     module: {
+        #         'name': module_name,
+        #         'author': module_author,
+        #         'version': module_version,
+        #         'link': module_link
+        #     }
+        # }
+        # helpers_list = {}
+        # helpers_list.update(helpers_repo_instance)
+
+        connection_test = test_github_connection()[0]
 
         if not connection_test:
             return lang.get(key='not_configured')
 
         if module_link and module_path:
-            print_message(lang.get(key='render_reqs'), force=True)
-            self.renderreq(module)
-            print_message(lang.get(key='render_man'), force=True)
-            self.rendermd(module)
-            print_message(lang.get(key='render_hash'), force=True)
-            self.renderhash(module)
+            if not skip_render:
+                print_message(lang.get(key='render_reqs'), force=True)
+                self.renderreq(module)
+                print_message(lang.get(key='render_man'), force=True)
+                self.rendermd(module)
+                print_message(lang.get(key='render_hash'), force=True)
+                self.renderhash(module)
 
             module_git_repo = Path(module_path) / '.git'
             repo = Repo.init(module_path) if not module_git_repo.exists() else Repo(module_path)
@@ -472,8 +505,13 @@ class modulesHelper:
 
             if any(ref.remote_head in ['master', 'main'] for ref in repo.remotes.origin.refs):
                 branch_name = re.sub(r'\.\d+\.\d+', '.x.x', module_version)
-                new_branch = repo.create_head(branch_name)
-                new_branch.checkout()
+                if not any(ref.remote_head in [branch_name] for ref in repo.remotes.origin.refs):
+                    new_branch = repo.create_head(branch_name)
+                    new_branch.checkout()
+                else:
+                    repo.git.stash("push", "-u")
+                    repo.git.checkout(branch_name)
+                    repo.git.stash("pop")
             else:
                 branch_name = 'master'
 
@@ -482,6 +520,10 @@ class modulesHelper:
             repo.index.commit(commit_message)
 
             if module_version not in repo.tags:
+                repo.create_tag(module_version, message=commit_message)
+            
+            if rewrite_tag:
+                repo.delete_tag(module_version)
                 repo.create_tag(module_version, message=commit_message)
 
             try:
@@ -501,14 +543,14 @@ class modulesHelper:
             self.settings = settings
             self._rendertemplate = rendertemplatefunc
 
-        def viewreport(self, module: str, report: str = 'summary', maximized: bool = False, debug: bool = False):
+        def viewreport(self, module: str, report: str = 'summary', maximized: bool = False):
             reports_path = Path(HELPERS_DIR) / f'{module}/tests/reports'
             report_path = reports_path / f'{report}.html'
             if report_path.exists():
                 confirm_close = self.settings.get('report_confirm_close', 'False') == 'True'
                 resizable = self.settings.get('report_resizable', 'False') == 'True'
                 webview.create_window(str(report_path), f'file://{str(report_path)}', maximized=maximized, text_select=True, width=850, resizable=resizable, confirm_close=confirm_close)
-                webview.start(debug=debug)
+                webview.start(debug=DEBUG)
 
         def start(self, module: str, verbose: bool = False, report: bool = False, **kwargs):
             tests = {Path(file): file for file in glob.glob(os.path.join(Path(Path(HELPERS_DIR) / f'{module}/tests'), "*.py"))}

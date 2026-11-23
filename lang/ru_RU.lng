@@ -1,11 +1,11 @@
 ---
 metadata:
   author: JoePeach88
-  version: 1.0.0
+  version: 1.0.1
   lang: Русский
 
 cli.py:
-  __main__: "Версия Python ({py_version}) не совместима с {product_name} CLI, необходимая версия <= {required_version}."
+  __main__: "Версия Python ({py_version}) не совместима с {product_name} CLI, необходимая версия >= {required_version}."
 
 handler.py:
   description: |
@@ -28,18 +28,24 @@ handler.py:
 
     `helper core selfcheck` или `helper selfcheck` - для проверки работоспособности CLI.
 
-    `helper modules ls` - для просмотра всех установленных модулей.
+    `helper modules ls --all` или `helper helpers` - для просмотра всех установленных модулей.
 
     `helper <module_name> man` - для просмотра мануала к модулю.
 
     `helper <module_name> help` - для просмотра всех известных методов модуля и их алиасов.
-  _get_attribute: "\n\nДоступный мануал:\n"
+  _get_attribute: 
+    items:
+      methods: "Метод '{name}' не найден, наиболее подходящий метод:\n\t{matches}"
+      manual: "Доступный мануал:"
   helper_handler: "Затраченное время: {measure_time}."
   detect_handler:
     items:
       new_version: "> ℹ️ **INFO:** Новая версия ({version}) доступна, установите с помощью команды:\n\n```\nhelper core update install\n```"
       disabled: "Модуль '{method}' выключен."
       unknown_method: "Неизвестный метод '{method}'."
+      dll_functions: |
+        ## Доступные методы:
+        * {methods}
   prepare_doc:
     items:
       aliases: "\n**{method}**\n> Алиасы: {alias}\n---\n"
@@ -59,13 +65,15 @@ handler.py:
         Кодировка системы: {encoding}
         Версия Python: {version}
         Исполняемый файл Python: {executable}
+        Кэширование включено: {cache_enabled}
+        Путь к кэшу: {cache_location}
       after_selfcheck: |
         Администратор: {is_admin}
         Строки less: {less_lines}
         Уровни логирования для лог-файла: {logs_levels}
         Путь к логам: {logs_path}
         Pip прокси: {pip_proxy}
-        Параметр pip --break_system_packages: {pip_break_system_packages}
+        Параметры pip: {pip_params}
         Дебаг режим: {debug}
         Эмодзи включены: {emoji_enabled}
         Фильтр для распаковки файлов: {unpack_file_filter}

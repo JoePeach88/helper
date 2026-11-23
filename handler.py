@@ -7,8 +7,8 @@ from pathlib import Path
 from difflib import get_close_matches
 from env import (
     __release__, __version__, __version_name__, __product_name__, IS_ADMIN, SYSTEM_PLATFORM, LESS_LINES, LOGS_LEVELS, LOGS_PATH,
-    PIP_PROXY, DEBUG, LOCALE, ENCODING, EMOJI_ENABLED, UNPACK_FILE_FILTER, HRDRM_ENABLED, PIP_BREAK_SYSTEM_PACKAGES, GC_ENABLED,
-    MD_RETURN_OUTPUT, UPDATE_CHECK, lang, MEASURE_TIME
+    PIP_PROXY, DEBUG, LOCALE, ENCODING, EMOJI_ENABLED, UNPACK_FILE_FILTER, HRDRM_ENABLED, GC_ENABLED,
+    MD_RETURN_OUTPUT, UPDATE_CHECK, lang, MEASURE_TIME, CACHE_ENABLED, CACHE_LOCATION, PIP_PARAMS
 )
 from helpers import _find_module, _find_settings, _prepare_helper, _find_disabled_module, list_helpers, Helper, HELPERS_DIR, BASE_LIBRARY
 from messages import print_message, render_md, less, WARNING, ERROR
@@ -23,12 +23,12 @@ def _get_attribute(obj, name, helper):
         closest_matches = get_close_matches(name, [method for method in dir(obj.helper if 'helper' in obj_methods else obj) if not method.startswith('_')], n=3, cutoff=0.6)
         if closest_matches:
             matches = "\n\t".join(closest_matches)
-            print(f"Method '{name}' not found, the most similar methods are:\n\t{matches}")
+            print(lang.get(key='methods', name=name, matches=matches))
             if 'helper' in dir(obj):
-                print("\n\nAvailable manual:\n")
+                print(lang.get(key='manual'))
                 _print_help(obj.helper, helper)
             elif 'helper' in dir(helper) or obj.__doc__:
-                print("\n\nAvailable manual:\n")
+                print(lang.get(key='manual'))
                 _print_help(obj, helper)
         return None
 
@@ -53,21 +53,21 @@ def _has_mandatory_params(function):
     )
 
 
-def _call_function(helper, function_name, function, args_list, aliases):
+def _call_function(helper, function_name, function, args_list, kwargs_list, aliases):
     if not callable(function) or isinstance(function, type):
-        _handle_non_callable(helper, function_name, function, args_list, aliases)
-        return
+        _handle_non_callable(helper, function_name, function, args_list, kwargs_list, aliases)
+        return 1
 
     if function_name in helper.module.__module_disabled_methods__ or function is None or function_name.startswith('_'):
         print_message(f"Helper {helper} has no method like '{function_name}'.", WARNING)
         _print_help(helper.helper, helper)
-        return
+        return 1
 
-    if 'help' in args_list or '--help' in args_list:
+    if 'help' in args_list or 'help' in kwargs_list:
         _print_help(function, helper)
-        return
+        return 1
 
-    args, kwargs = prepare_arguments(*args_list)
+    args, kwargs = args_list, kwargs_list
     has_mandatory = _has_mandatory_params(function)
 
     full_output = False
@@ -81,7 +81,7 @@ def _call_function(helper, function_name, function, args_list, aliases):
 
     if not args and not kwargs and has_mandatory:
         _print_help(function, helper, full_output)
-        return
+        return 1
 
     for alias, aliases_list in aliases.items():
         if function_name in aliases_list:
@@ -103,10 +103,68 @@ def _call_function(helper, function_name, function, args_list, aliases):
                 print(output)
     except Exception as e:
         print_message(f"An error occurred while calling '{function_name}' in helper '{helper}': {e}", ERROR, True)
-        sys.exit(1)
+        return 1
 
 
-def _handle_non_callable(helper, function_name, obj, args_list, aliases):
+def _call_dll_function(method, args, kwargs):
+    import ctypes
+    import lief
+    try:
+        dll_path = Path(__file__).parent / f'helpers/dlls/{method}.dll'
+        if not dll_path.exists():
+            print_message(lang.get(function='detect_handler', key='unknown_method', method=method), WARNING, True)
+            return
+        print_message('Creating CDLL and parsing functions in dll file...')
+        libc = ctypes.CDLL(str(dll_path))
+        binary = lief.parse(str(dll_path))
+        print_message(f'CDLL: {libc}.')
+        print_message(f'Parse object: {binary}.')
+        exported_functions = [func.name for func in binary.exported_functions]
+        print_message(f'Parsed functions ({len(exported_functions)}): {exported_functions}.')
+        full_output = kwargs.pop('no_less', False)
+
+        if not args:
+            md = render_md(lang.get(function='detect_handler', key='dll_functions', methods='\n\n* '.join(exported_functions)))
+            if full_output:
+                print(md)
+            else:
+                less(md)
+            return
+
+        function = args[0]
+        raw_args = args[1:]
+
+        if function in exported_functions:
+            print_message(f"Function '{function}' found in dll, executing it...")
+            function_obj = getattr(libc, function)
+            # function_obj.restype = ctypes.c_char_p
+            c_args = [
+                arg.encode('utf-8') if isinstance(arg, str) else arg
+                for arg in raw_args
+            ]
+            print_message(f"Executing '{function_obj}' with args: {c_args}.")
+            raw_output = function_obj(*c_args)
+
+            if raw_output is not None:
+                print_message(f"Decoding raw output: '{raw_output}'.")
+                output = raw_output.decode('utf-8') if isinstance(raw_output, bytes) else raw_output
+                if isinstance(output, str):
+                    if MD_RETURN_OUTPUT:
+                        output = render_md(output)
+                    if full_output:
+                        print(output)
+                    else:
+                        less(output)
+                else:
+                    print(output)
+        else:
+            print_message(lang.get(function='detect_handler', key='unknown_method', method=function), WARNING, True)
+
+    except Exception as e:
+        print_message(f"DLL execution error: {e}.", ERROR, force=True)
+
+
+def _handle_non_callable(helper, function_name, obj, args_list, kwargs_list, aliases):
     if not args_list:
         _print_help(obj, helper)
         return
@@ -131,32 +189,10 @@ def _handle_non_callable(helper, function_name, obj, args_list, aliases):
     nested_function = _get_attribute(nested_object, nested_name, helper)
 
     if nested_function is not None:
-        _call_function(helper, nested_name, nested_function, nested_args, aliases)
+        _call_function(helper, nested_name, nested_function, nested_args, kwargs_list, aliases)
 
 
-def prepare_arguments(*args):
-    new_args = []
-    kwargs = {}
-    i = 0
-    while i < len(args):
-        if args[i].startswith('--'):
-            step = 2
-            key = args[i].lstrip('--')
-            key = key.replace('-', '_')
-            value = args[i + 1] if i + 1 < len(args) else None
-            if value and value.startswith('--'):
-                value = None
-                step = 1
-            kwargs[key] = True if value is None else value # key-arguments without value (None) stored as True
-            i += step
-        else:
-            if args[i] not in new_args:
-                new_args.append(args[i])
-            i += 1
-    return new_args, kwargs
-
-
-def detect_handler(method, arguments):
+def detect_handler(method, args, kwargs):
     if UPDATE_CHECK:
         try:
             print_message("Initiating builtin 'core' helper to check core updates.")
@@ -168,8 +204,7 @@ def detect_handler(method, arguments):
             print_message("Helper 'core' initiated.")
         except Exception as e:
             print_message(f"Helper 'core' cannot be initiated cause something went wrong: {e}.", ERROR)
-            sys.exit(1)
-            return
+            return 1
         updates = core_helper.update.check(pretty = False)
         if updates:
             print(render_md(lang.get(key='new_version', version = updates[0]['remote_version'])))
@@ -178,14 +213,14 @@ def detect_handler(method, arguments):
     is_disabled = _find_disabled_module(f'helpers.{method}')
     if is_disabled:
         print_message(lang.get(key='disabled', method = method), WARNING, force=True)
-        return
+        return 1
     if is_helper:
         print_message(f"Found helper handler at {is_helper}.")
-        helper_handler(method, arguments)
+        return helper_handler(method, args, kwargs)
     elif method in ['howto']:
         with open(HELPERS_DIR / 'README.md', encoding='utf-8') as readme_file:
             readme_content = render_md(readme_file.read())
-            if '--no-less' in arguments:
+            if 'no_less' in args or 'no_less' in kwargs:
                 print(readme_content)
             else:
                 less(readme_content)
@@ -194,13 +229,13 @@ def detect_handler(method, arguments):
     elif method in ['version', '-v', '--version']:
         version_handler()
     elif method in ['changelog', 'changes']:
-        if len(arguments) == 1 and not ('dev' in arguments[0] or 'stable' in arguments[0]):
-            arguments.append('stable')
-        changelog = Path(__file__).parent / (f"changelogs/{__version__}-{__release__}.md" if not arguments else f"changelogs/{'-'.join(arguments)}.md")
+        if len(args) == 1 and not ('dev' in args[0] or 'stable' in args[0]):
+            args.append('stable')
+        changelog = Path(__file__).parent / (f"changelogs/{__version__}-{__release__}.md" if not args else f"changelogs/{'-'.join(args)}.md")
         if changelog.exists():
             with open(changelog, encoding='utf-8') as changelog_file:
                 changes_content = render_md(changelog_file.read())
-                if '--no-less' in arguments:
+                if 'no_less' in args or 'no_less' in kwargs:
                     print(changes_content)
                 else:
                     less(changes_content)
@@ -215,8 +250,21 @@ def detect_handler(method, arguments):
         print(core_helper.selfcheck())
     elif method in ['help', '--help'] or method is None:
         _print_help(lang.get(function='description'))
+    elif method in ['helpers', 'list', 'ls']:
+        try:
+            print_message("Initiating builtin 'modules' helper to list all available helpers.")
+            modules_prepared = _prepare_helper('modules')
+            modules_module = _find_module('helpers.modules')
+            modules_settings = _find_settings('modules')
+            modules_helper = getattr(modules_module, modules_prepared)
+            modules_helper = modules_helper(modules_settings)
+            print_message("Helper 'modules' initiated.")
+        except Exception as e:
+            print_message(f"Helper 'core' cannot be initiated cause something went wrong: {e}.", ERROR)
+            return 1
+        print(modules_helper.ls(all=True))
     else:
-        print_message(lang.get(key='unknown_method', method=method), WARNING, True)
+        _call_dll_function(method, args, kwargs)
 
 
 def prepare_doc(obj, helper = None):
@@ -278,19 +326,20 @@ def prepare_doc(obj, helper = None):
     return documentation if documentation else None
 
 
-def helper_handler(helper_name, arguments):
+def helper_handler(helper_name, args, kwargs):
     helper = Helper(helper_name)
     aliases = helper.module.__methods_static_aliases__
     defined_aliases = helper.aliases
     if defined_aliases:
         aliases.update(defined_aliases)
 
-    if not arguments or arguments[0] in ('help', '__init__', None, '--help'):
+    if not args or args[0] in ('help', '__init__', None, '--help'):
         _print_help(helper.helper, helper)
-        return
+        return 0
 
-    function_name = arguments[0].lower()
-    function_args = arguments[1:]
+    function_name = args[0].lower()
+    function_args = args[1:]
+    function_kwargs = kwargs
 
     for alias, aliases_list in aliases.items():
         if function_name in aliases_list:
@@ -299,13 +348,14 @@ def helper_handler(helper_name, arguments):
 
     function = _get_attribute(helper, function_name, helper)
     if not function:
-        return
+        return 1
 
     start_time = datetime.now()
-    _call_function(helper, function_name, function, function_args, aliases)
+    exit_code = _call_function(helper, function_name, function, function_args, function_kwargs, aliases)
     end_time = datetime.now()
     if MEASURE_TIME:
         print(lang.get(measure_time=end_time - start_time))
+    return exit_code
 
 
 def version_handler():
@@ -314,10 +364,9 @@ def version_handler():
     release = __release__
     helpers = list_helpers()
     print(pyfiglet.figlet_format(f"{__product_name__} CLI"))
-    print(f'{__product_name__} INFO')
     print(lang.get(version = version, version_name = version_name, release = release))
     for helper in helpers:
-        print(f"{helper['name']}: {helper['version']} --- ({Path(helper['file']).parent}) {'[builtin] 'if helper['builtin'] else ''}{'--- (dev) 'if helper['dev'] else ''}")
+        print(f"{helper['name']}: {helper['version']} --- ({Path(helper['file']).parent.as_posix()}) {'[builtin] 'if helper['builtin'] else ''}{'--- (dev) 'if helper['dev'] else ''}")
 
 
 def debug_handler():
@@ -337,10 +386,10 @@ def debug_handler():
     selfcheck = core_helper.selfcheck()
 
     print('--------------------------\n')
-    print(lang.get(key='before_selfcheck', platform=SYSTEM_PLATFORM, locale=LOCALE, encoding=ENCODING, version=sys.version, executable=sys.executable))
+    print(lang.get(key='before_selfcheck', platform=SYSTEM_PLATFORM, locale=LOCALE, encoding=ENCODING, version=sys.version, executable=Path(sys.executable).as_posix(), cache_enabled=BASE_LIBRARY['yes' if CACHE_ENABLED else 'no'], cache_location=CACHE_LOCATION))
     print(selfcheck)
     print(lang.get(key='after_selfcheck', 
-                   is_admin=BASE_LIBRARY['yes' if IS_ADMIN else 'no'], less_lines=LESS_LINES, logs_levels=LOGS_LEVELS, logs_path=LOGS_PATH, pip_proxy=PIP_PROXY, pip_break_system_packages=BASE_LIBRARY['yes' if PIP_BREAK_SYSTEM_PACKAGES else 'no'],
+                   is_admin=BASE_LIBRARY['yes' if IS_ADMIN else 'no'], less_lines=LESS_LINES, logs_levels=LOGS_LEVELS, logs_path=LOGS_PATH, pip_proxy=PIP_PROXY, pip_params=PIP_PARAMS,
                    debug=BASE_LIBRARY['yes' if DEBUG else 'no'], emoji_enabled=BASE_LIBRARY['yes' if EMOJI_ENABLED else 'no'], unpack_file_filter=UNPACK_FILE_FILTER, 
                    hrdrm_enabled=BASE_LIBRARY['yes' if HRDRM_ENABLED else 'no'], gc_enabled=BASE_LIBRARY['yes' if GC_ENABLED else 'no']), '\n')
 

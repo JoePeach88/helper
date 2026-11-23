@@ -1,11 +1,11 @@
 ---
 metadata:
   author: JoePeach88
-  version: 1.0.0
+  version: 1.0.1
   lang: English
 
 cli.py:
-  __main__: "Python version ({py_version}) not compatible with {product_name} CLI, required version <= {required_version}."
+  __main__: "Python version ({py_version}) not compatible with {product_name} CLI, required version >= {required_version}."
 
 handler.py:
   description: |
@@ -26,15 +26,17 @@ handler.py:
 
     `helper debug` - to view cli debug information.
 
-    `helper core selfcheck` - to check that all setup correctly.
+    `helper core selfcheck` or `helper selfcheck` - to check that all setup correctly.
 
-    `helper modules ls` - to view all available modules.
+    `helper modules ls --all` or `helper helpers` - to view all available modules.
 
     `helper <module_name> man` - to view manual for helper module.
 
     `helper <module_name> help` - to view help information for module, show all available methods and its aliases.
   _get_attribute:
-    items: "\n\nAvailable manual:\n"
+    items: 
+      methods: "Method '{name}' not found, the most similar methods are:\n\t{matches}"
+      manual: "Available manual:"
   helper_handler:
     items: "Time spent: {measure_time}."
   detect_handler:
@@ -42,6 +44,9 @@ handler.py:
       new_version: "> ℹ️ **INFO:** New helper version ({version}) available, install it via command below:\n\n```\nhelper core update install\n```"
       disabled: "Module '{method}' is disabled."
       unknown_method: "Unknown keyword '{method}'."
+      dll_functions: |
+        ## Available methods:
+        * {methods}
   prepare_doc:
     items:
       aliases: "\n**{method}**\n> Aliases: {alias}\n---\n"
@@ -62,13 +67,15 @@ handler.py:
         System encoding: {encoding}
         Python Version: {version}
         Python Executable Path: {executable}
+        Cache enabled: {cache_enabled}
+        Cache location: {cache_location}
       after_selfcheck: |
         Is admin: {is_admin}
         Less lines: {less_lines}
         Log file logs levels: {logs_levels}
         Logs path: {logs_path}
         Pip proxy: {pip_proxy}
-        Pip --break_system_packages option: {pip_break_system_packages}
+        Pip params: {pip_params}
         Debug mode: {debug}
         Emoji enabled: {emoji_enabled}
         Unpack file filter: {unpack_file_filter}
