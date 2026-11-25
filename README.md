@@ -16,12 +16,12 @@ helper <module> <module_method> <module_args>
 
 ## Requirements
 
-* **Python >= 3.7**
+* **Python >= 3.11**
 * **Installed requirements from [requirements.txt](https://github.com/JoePeach88/helper/blob/1.x.x/requirements.txt)**
 
 ## Installation
 
-1. Install Python >= 3.7
+1. Install Python >= 3.11
     * from [official website](https://www.python.org/downloads/) for Windows
     * for other systems install Python using your package manager (`brew`/`apt`/`yum` and etc.)
 
