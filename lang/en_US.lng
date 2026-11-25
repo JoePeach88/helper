@@ -45,7 +45,22 @@ handler.py:
       disabled: "Module '{method}' is disabled."
       unknown_method: "Unknown keyword '{method}'."
       dll_functions: |
-        ## Available methods:
+        ## helper DLL
+
+        ```
+        Usage:
+            {dll} <dll_method> --return-type <type>
+        ```
+
+        ## Available return types:
+
+        * `int`
+        * `float`
+        * `str`
+        * `bytes`
+        * `bool`
+
+        ## Available methods ({count}):
         * {methods}
   prepare_doc:
     items:

@@ -217,8 +217,9 @@ class modulesHelper:
         else:
             return lang.get(key='exists', module=module)
 
-    def rendertemplate(self, template: str, file: str, force: bool = False, pretty: bool = True, **kwargs):
-        template_path = self.templates.get(template)
+    def rendertemplate(self, template: str, file: str, force: bool = False, pretty: bool = True, template_path: str = None, **kwargs):
+        if not template_path:
+            template_path = self.templates.get(template)
 
         if not template_path or not Path(template_path).exists():
             return lang.get(key='not_exists', template=template) if pretty else False

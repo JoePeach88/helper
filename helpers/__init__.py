@@ -199,7 +199,6 @@ def _load_modules_from_directory(directory_path: str, package: str = None, force
     return modules, disabled_modules, settings
 
 
-
 # To bypass double load through dynamic module loader
 if __name__ == HELPERS_DIR.name:
     MODULES, DISABLED_MODULES, SETTINGS = _load_modules_from_directory(HELPERS_DIR, package=HELPERS_DIR.name, install_reqs=HRDRM_ENABLED)

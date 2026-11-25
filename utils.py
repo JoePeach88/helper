@@ -1,6 +1,7 @@
 import inspect
 import math
 import hashlib
+import ast
 from pathlib import Path
 
 
@@ -47,3 +48,30 @@ def get_file_sha256(file: str):
         for byte_block in iter(lambda: f.read(65536), b""):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
+
+
+def is_int(s: str):
+    try:
+        int(s)
+        return True, int(s)
+    except ValueError:
+        return False, s
+
+
+def is_float(s: str):
+    try:
+        float(s)
+        return True, float(s)
+    except ValueError:
+        return False, s
+
+
+def is_bytes(s: str):
+    try:
+        return isinstance(ast.literal_eval(s), bytes), ast.literal_eval(s)
+    except (ValueError, SyntaxError):
+        return False, s
+
+
+def is_bool(s: str):
+    return s.strip().lower() in {"true", "false"}, s.strip().lower() == "true"

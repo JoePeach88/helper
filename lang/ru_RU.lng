@@ -44,7 +44,22 @@ handler.py:
       disabled: "Модуль '{method}' выключен."
       unknown_method: "Неизвестный метод '{method}'."
       dll_functions: |
-        ## Доступные методы:
+        ## helper DLL
+        
+        ```
+        Использование:
+            {dll} <метод из dll> --return-type <тип данных>
+        ```
+
+        ## Доступные возвращаемые типы данных:
+
+        * `int`
+        * `float`
+        * `str`
+        * `bytes`
+        * `bool`
+
+        ## Доступные методы ({count}):
         * {methods}
   prepare_doc:
     items:
