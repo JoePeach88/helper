@@ -1,6 +1,6 @@
 - ./lang/en_US.lng: b113b847127aca05c42d0a6f9b3582c2e345e9fc6dfd4ee66cf3110d08f0e9fb
 - ./lang/ru_RU.lng: 70e1bd5f47ff6af909e1b5bbdfcbd48633893f27ae0ec90f36ee653d7ffa22db
-- ./requirements.txt: 8d4d70ffa9552975f8010b968064b117b445c139edda143a095d6684337eeeef
+- ./requirements.txt: 7a7d5f9ff668bc78389ed965f96906a56e0a12ea7bbcaeae10b095d0fe5d4f92
 - ./templates/documentation.tmpl: 01721df5c79a588416c823eec6aafaf7e5dbf73a192dc3ac92e67a640cd49c53
 - ./templates/github-release.tmpl: cb5c108a50d8b4c57335b315f9505f6fea1cc81458e0323ac61abbe7fe1084a3
 - ./templates/gitignore.tmpl: 195c72c719df8e6b65dc2102b889a1f74f08c0fbf4044b5230d864dbdc1fe59c
@@ -11,4 +11,4 @@
 - ./templates/scenario.tmpl: 1a418c472884ee321cb8ec51c0663457ed7b7d2d5626b20f382d7d08e9e9fa92
 - ./templates/test.tmpl: 7b6a569088b2d9937f8d738266a9b5ea6c887689c34dc49201558a3d54275493
 - ./utils.py: 43018137f5584ed6ed616de60f1241d31bf2538041f6ac0147ce84e70c404ada
-- ./__init__.py: 3f534493ba9a5976c4cba3ffde07e67806f1a3903a32f2693cef596014515f87
+- ./__init__.py: 83aea2bc6902e0852567fdce66a62e6f1c99c64a9f38831295e30f17dce89d31
